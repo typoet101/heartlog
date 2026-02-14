@@ -396,9 +396,9 @@
         }
 
         // ═══════════════════════════════════════
-        // 메인 화면 (입체감 있는 3D 버튼)
+        // 메인 화면 (버튼 = 타이머 통합)
         // ═══════════════════════════════════════
-        function MainScreen({ todayCount, onAlarm, timerRunning, timerElapsed, onTimerStart, onTimerStop }) {
+        function MainScreen({ todayCount, onButtonPress, timerRunning, timerElapsed }) {
             const now = new Date();
             const timerDisplay = useCallback(() => {
                 const totalSec = Math.floor(timerElapsed / 1000);
@@ -429,10 +429,10 @@
                         </h1>
                     </div>
 
-                    {/* 3D 알람 버튼 영역 */}
+                    {/* 3D 버튼 = 타이머 통합 */}
                     <div style={{
                         position: 'relative',
-                        width: 240, height: 240,
+                        width: 260, height: 260,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         marginBottom: 24
                     }}>
@@ -440,30 +440,38 @@
                         <div style={{
                             position: 'absolute', inset: 0,
                             borderRadius: '50%',
-                            background: 'radial-gradient(circle, rgba(255,107,107,0.08) 40%, transparent 70%)',
-                            animation: 'pulse 3s ease-in-out infinite'
+                            background: timerRunning
+                                ? 'radial-gradient(circle, rgba(255,107,107,0.15) 40%, transparent 70%)'
+                                : 'radial-gradient(circle, rgba(255,107,107,0.08) 40%, transparent 70%)',
+                            animation: timerRunning ? 'pulse 1.5s ease-in-out infinite' : 'pulse 3s ease-in-out infinite'
                         }} />
                         {/* 외부 글로우 링 2 */}
                         <div style={{
                             position: 'absolute',
-                            width: 200, height: 200,
+                            width: 220, height: 220,
                             left: 20, top: 20,
                             borderRadius: '50%',
-                            background: 'radial-gradient(circle, rgba(255,107,107,0.12) 30%, transparent 70%)',
-                            animation: 'pulse 3s ease-in-out 0.5s infinite'
+                            background: timerRunning
+                                ? 'radial-gradient(circle, rgba(255,107,107,0.2) 30%, transparent 70%)'
+                                : 'radial-gradient(circle, rgba(255,107,107,0.12) 30%, transparent 70%)',
+                            animation: timerRunning ? 'pulse 1.5s ease-in-out 0.3s infinite' : 'pulse 3s ease-in-out 0.5s infinite'
                         }} />
-                        {/* 메인 버튼 */}
+                        {/* 메인 버튼 (대기 = 누르세요 / 측정중 = 타이머) */}
                         <button
-                            onClick={() => { vibrate(); onAlarm(); }}
+                            onClick={() => { vibrate(); onButtonPress(); }}
                             style={{
-                                width: 160, height: 160, borderRadius: '50%',
-                                background: 'radial-gradient(circle at 35% 30%, #FF9A9A 0%, #FF6B6B 50%, #E85555 100%)',
+                                width: 180, height: 180, borderRadius: '50%',
+                                background: timerRunning
+                                    ? 'radial-gradient(circle at 35% 30%, #FF7A7A 0%, #E85555 50%, #D04040 100%)'
+                                    : 'radial-gradient(circle at 35% 30%, #FF9A9A 0%, #FF6B6B 50%, #E85555 100%)',
                                 color: '#fff', display: 'flex', flexDirection: 'column',
-                                alignItems: 'center', justifyContent: 'center', gap: 8,
+                                alignItems: 'center', justifyContent: 'center', gap: 6,
                                 border: 'none',
-                                boxShadow: '0 8px 32px rgba(255,107,107,0.35), inset 0 -4px 12px rgba(0,0,0,0.1), inset 0 4px 8px rgba(255,255,255,0.25)',
-                                animation: 'pulseGlow 2.5s ease-in-out infinite',
-                                transition: 'transform 0.15s ease',
+                                boxShadow: timerRunning
+                                    ? '0 10px 40px rgba(255,107,107,0.45), inset 0 -4px 12px rgba(0,0,0,0.15), inset 0 4px 8px rgba(255,255,255,0.2)'
+                                    : '0 8px 32px rgba(255,107,107,0.35), inset 0 -4px 12px rgba(0,0,0,0.1), inset 0 4px 8px rgba(255,255,255,0.25)',
+                                animation: timerRunning ? 'pulseGlow 1.2s ease-in-out infinite' : 'pulseGlow 2.5s ease-in-out infinite',
+                                transition: 'transform 0.15s ease, background 0.3s ease',
                                 position: 'relative', zIndex: 2
                             }}
                             onTouchStart={e => e.currentTarget.style.transform = 'scale(0.92)'}
@@ -471,62 +479,47 @@
                             onMouseDown={e => e.currentTarget.style.transform = 'scale(0.92)'}
                             onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
                         >
-                            <span style={{ fontSize: 42, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))', animation: 'heartBeat 1.5s ease-in-out infinite' }}>💓</span>
-                            <span style={{ fontSize: 18, fontWeight: 800, textShadow: '0 1px 3px rgba(0,0,0,0.15)' }}>기록하기</span>
-                        </button>
-                    </div>
-
-                    {/* 안내 문구 */}
-                    <p style={{
-                        fontSize: 15, color: 'var(--text-sub)', fontWeight: 500,
-                        textAlign: 'center', lineHeight: 1.6, marginBottom: 36
-                    }}>
-                        심장이 두근거리거나 불편하면<br/>
-                        가운데 버튼을 눌러주세요
-                    </p>
-
-                    {/* 타이머 카드 */}
-                    <div className="glass-card" style={{
-                        margin: '0 24px', padding: '18px 24px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        width: 'calc(100% - 48px)', maxWidth: 380
-                    }}>
-                        <div>
-                            <p style={{ fontSize: 13, color: 'var(--text-sub)', fontWeight: 600, marginBottom: 4 }}>
-                                ⏱ 증상 지속 시간 측정
-                            </p>
                             <span style={{
-                                fontSize: 36, fontWeight: 800, fontVariantNumeric: 'tabular-nums',
-                                color: timerRunning ? 'var(--text)' : 'var(--text-sub)',
-                                letterSpacing: '2px'
-                            }}>
-                                {timerDisplay()}
-                            </span>
-                        </div>
-                        <button
-                            onClick={timerRunning ? onTimerStop : onTimerStart}
-                            style={{
-                                width: 52, height: 52, borderRadius: '50%',
-                                background: timerRunning
-                                    ? 'linear-gradient(135deg, var(--primary), var(--primary-dark))'
-                                    : 'var(--bg-sub)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                boxShadow: timerRunning ? '0 4px 16px rgba(255,107,107,0.3)' : 'var(--shadow-sm)',
-                                transition: 'all 0.3s ease'
-                            }}
-                        >
+                                fontSize: timerRunning ? 32 : 42,
+                                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))',
+                                animation: timerRunning ? 'heartBeat 0.8s ease-in-out infinite' : 'heartBeat 1.5s ease-in-out infinite',
+                                transition: 'font-size 0.3s ease'
+                            }}>💓</span>
                             {timerRunning ? (
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="white">
-                                    <rect x="4" y="3" width="4" height="14" rx="1"/>
-                                    <rect x="12" y="3" width="4" height="14" rx="1"/>
-                                </svg>
+                                <span style={{
+                                    fontSize: 28, fontWeight: 900,
+                                    fontVariantNumeric: 'tabular-nums',
+                                    textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                    letterSpacing: '2px'
+                                }}>
+                                    {timerDisplay()}
+                                </span>
                             ) : (
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="var(--primary)">
-                                    <path d="M5 3L17 10L5 17V3Z"/>
-                                </svg>
+                                <span style={{ fontSize: 17, fontWeight: 800, textShadow: '0 1px 3px rgba(0,0,0,0.15)' }}>
+                                    눌러주세요
+                                </span>
                             )}
                         </button>
                     </div>
+
+                    {/* 안내 문구 (상태별) */}
+                    <p style={{
+                        fontSize: 15, color: 'var(--text-sub)', fontWeight: 500,
+                        textAlign: 'center', lineHeight: 1.6, marginBottom: 36,
+                        transition: 'all 0.3s ease'
+                    }}>
+                        {timerRunning ? (
+                            <span>
+                                <span style={{ color: 'var(--primary)', fontWeight: 700 }}>측정 중...</span><br/>
+                                멈추려면 다시 눌러주세요
+                            </span>
+                        ) : (
+                            <span>
+                                심장이 두근거리거나 불편하면<br/>
+                                가운데 버튼을 눌러주세요
+                            </span>
+                        )}
+                    </p>
                 </div>
             );
         }
@@ -1127,10 +1120,24 @@ function doGet(e) {
                 setTimeout(() => setToast({ show: false, message: '' }), 2000);
             };
 
+            const handleButtonPress = () => {
+                if (!timerRunning) {
+                    // 1탭: 타이머 시작
+                    setTimerStart(Date.now());
+                    setTimerRunning(true);
+                    setTimerElapsed(0);
+                } else {
+                    // 2탭: 타이머 멈추고 기록 패널 열기
+                    setTimerRunning(false);
+                    clearInterval(timerRef.current);
+                    setIsRecording(true);
+                }
+            };
+
             return (
                 <div>
                     <Toast message={toast.message} show={toast.show} />
-                    {activeTab === 'home' && <MainScreen todayCount={todayCount} onAlarm={() => setIsRecording(true)} timerRunning={timerRunning} timerElapsed={timerElapsed} onTimerStart={() => { setTimerStart(Date.now()); setTimerRunning(true); setTimerElapsed(0); }} onTimerStop={() => { setTimerRunning(false); clearInterval(timerRef.current); }} />}
+                    {activeTab === 'home' && <MainScreen todayCount={todayCount} onButtonPress={handleButtonPress} timerRunning={timerRunning} timerElapsed={timerElapsed} />}
                     {activeTab === 'history' && <RecordScreen records={records} onDeleteRecord={handleDelete} />}
                     {activeTab === 'stats' && <StatsScreen records={records} />}
                     {activeTab === 'settings' && <SettingsScreen records={records} />}
