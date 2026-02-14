@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Heart Log | 심장 기록</title>
 
-    <!-- PWA: 아이폰 홈화면 앱 설정 -->
+    <!-- PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="심장기록">
-    <meta name="theme-color" content="#FFF5F0">
+    <meta name="theme-color" content="#FFF5F2">
     <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
     <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -21,21 +21,29 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
         :root {
-            --bg: #FFF5F0;
-            --bg-sub: #FFF0E8;
-            --primary: #F08C6A;
-            --primary-light: #FFB49A;
-            --primary-dark: #D6714E;
-            --primary-glow: rgba(240, 140, 106, 0.25);
-            --card: #FFFFFF;
+            --bg: #FFF5F2;
+            --bg-sub: #FFEEE8;
+            --primary: #FF6B6B;
+            --primary-light: #FF9A9A;
+            --primary-dark: #E85555;
+            --primary-glow: rgba(255, 107, 107, 0.25);
+            --primary-soft: rgba(255, 107, 107, 0.08);
+            --card: rgba(255, 255, 255, 0.75);
+            --card-solid: #FFFFFF;
+            --glass: rgba(255, 255, 255, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.8);
             --success: #6DD4B8;
-            --text: #3D2B2B;
-            --text-sub: #A3877B;
-            --border: #F0E0D8;
+            --text: #2D2424;
+            --text-sub: #B09A94;
+            --border: rgba(0,0,0,0.05);
             --sev1: #89CFF0;
             --sev2: #FFE066;
             --sev3: #FFB5A7;
             --sev4: #E8A0BF;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 20px rgba(0,0,0,0.06);
+            --shadow-lg: 0 8px 40px rgba(0,0,0,0.08);
+            --shadow-glow: 0 8px 32px rgba(255,107,107,0.2);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -49,10 +57,47 @@
             overflow-x: hidden;
         }
 
+        /* 배경 그라데이션 오브 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -120px;
+            right: -80px;
+            width: 320px;
+            height: 320px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,107,107,0.12) 0%, rgba(255,107,107,0.03) 60%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: 60px;
+            left: -100px;
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,154,154,0.1) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
         @keyframes pulse {
-            0%   { box-shadow: 0 8px 32px var(--primary-glow), 0 0 0 0 var(--primary-glow); }
-            50%  { box-shadow: 0 8px 32px var(--primary-glow), 0 0 0 18px rgba(240, 140, 106, 0); }
-            100% { box-shadow: 0 8px 32px var(--primary-glow), 0 0 0 0 var(--primary-glow); }
+            0%   { transform: scale(1); }
+            50%  { transform: scale(1.04); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes pulseGlow {
+            0%   { box-shadow: 0 0 0 0 rgba(255,107,107,0.3), var(--shadow-glow); }
+            50%  { box-shadow: 0 0 0 20px rgba(255,107,107,0), var(--shadow-glow); }
+            100% { box-shadow: 0 0 0 0 rgba(255,107,107,0.3), var(--shadow-glow); }
+        }
+
+        @keyframes pulseRing {
+            0%   { transform: scale(0.85); opacity: 0.6; }
+            100% { transform: scale(1.5); opacity: 0; }
         }
 
         @keyframes fadeIn {
@@ -63,11 +108,6 @@
         @keyframes slideUp {
             from { transform: translateY(100%); }
             to   { transform: translateY(0); }
-        }
-
-        @keyframes slideDown {
-            from { transform: translateY(0); }
-            to   { transform: translateY(100%); }
         }
 
         @keyframes chipPop {
@@ -81,13 +121,21 @@
         }
 
         @keyframes toastIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to   { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translate(-50%, -20px); }
+            to   { opacity: 1; transform: translate(-50%, 0); }
         }
 
-        @keyframes toastOut {
-            from { opacity: 1; transform: translateY(0); }
-            to   { opacity: 0; transform: translateY(-20px); }
+        @keyframes heartBeat {
+            0%   { transform: scale(1); }
+            15%  { transform: scale(1.15); }
+            30%  { transform: scale(1); }
+            45%  { transform: scale(1.1); }
+            60%  { transform: scale(1); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-6px); }
         }
 
         button {
@@ -97,9 +145,18 @@
             font-family: inherit;
             -webkit-tap-highlight-color: transparent;
         }
-
         button:focus-visible { outline: 3px solid var(--primary-light); outline-offset: 2px; }
         input:focus-visible, textarea:focus-visible { outline: 3px solid var(--primary-light); outline-offset: 2px; }
+
+        /* 글래스 카드 */
+        .glass-card {
+            background: var(--card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: var(--shadow-md);
+        }
     </style>
 </head>
 <body>
@@ -109,7 +166,7 @@
         const { useState, useEffect, useRef, useCallback } = React;
 
         // ═══════════════════════════════════════
-        // 상수 정의
+        // 상수
         // ═══════════════════════════════════════
         const SYMPTOMS = [
             { key: 'palpitation', label: '두근거림',  icon: '💓' },
@@ -146,8 +203,7 @@
             try {
                 const raw = localStorage.getItem(STORAGE_KEY);
                 if (!raw) return [];
-                const data = JSON.parse(raw);
-                return data.records || [];
+                return JSON.parse(raw).records || [];
             } catch { return []; }
         }
 
@@ -156,45 +212,33 @@
         }
 
         // ═══════════════════════════════════════
-        // Google Sheets 클라우드 동기화
+        // Google Sheets 동기화
         // ═══════════════════════════════════════
         const SHEET_URL_KEY = 'heartlog_sheet_url';
-
-        function getSheetUrl() {
-            return localStorage.getItem(SHEET_URL_KEY) || '';
-        }
-
-        function setSheetUrl(url) {
-            localStorage.setItem(SHEET_URL_KEY, url);
-        }
+        function getSheetUrl() { return localStorage.getItem(SHEET_URL_KEY) || ''; }
+        function setSheetUrl(url) { localStorage.setItem(SHEET_URL_KEY, url); }
 
         async function syncToSheet(record) {
             const url = getSheetUrl();
             if (!url) return { ok: false, reason: 'no_url' };
             try {
                 const sevInfo = getSeverityInfo(record.severity);
-                const body = {
-                    action: 'add',
-                    timestamp: record.timestamp,
-                    date: new Date(record.timestamp).toLocaleDateString('ko-KR'),
-                    time: formatTime(record.timestamp),
-                    symptoms: record.symptoms.map(getSymptomLabel).join(', '),
-                    severity: sevInfo ? `${sevInfo.emoji} ${sevInfo.label}` : '',
-                    activity: getActivityLabel(record.activity),
-                    duration: record.durationSeconds ? formatDuration(record.durationSeconds) : '',
-                    memo: record.memo || ''
-                };
-                const res = await fetch(url, {
-                    method: 'POST',
-                    mode: 'no-cors',
+                await fetch(url, {
+                    method: 'POST', mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
+                    body: JSON.stringify({
+                        action: 'add', timestamp: record.timestamp,
+                        date: new Date(record.timestamp).toLocaleDateString('ko-KR'),
+                        time: formatTime(record.timestamp),
+                        symptoms: record.symptoms.map(getSymptomLabel).join(', '),
+                        severity: sevInfo ? `${sevInfo.emoji} ${sevInfo.label}` : '',
+                        activity: getActivityLabel(record.activity),
+                        duration: record.durationSeconds ? formatDuration(record.durationSeconds) : '',
+                        memo: record.memo || ''
+                    })
                 });
                 return { ok: true };
-            } catch (e) {
-                console.log('Sheet sync failed:', e);
-                return { ok: false, reason: 'network' };
-            }
+            } catch (e) { return { ok: false, reason: 'network' }; }
         }
 
         async function syncDeleteToSheet(recordId) {
@@ -202,74 +246,57 @@
             if (!url) return;
             try {
                 await fetch(url, {
-                    method: 'POST',
-                    mode: 'no-cors',
+                    method: 'POST', mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'delete', id: recordId })
                 });
-            } catch (e) {
-                console.log('Sheet delete sync failed:', e);
-            }
+            } catch (e) {}
         }
 
         // ═══════════════════════════════════════
-        // 유틸 함수
+        // 유틸
         // ═══════════════════════════════════════
         function formatDate(d) {
             const date = new Date(d);
             return `${date.getMonth() + 1}월 ${date.getDate()}일 ${DAYS_KO[date.getDay()]}요일`;
         }
-
         function formatTime(d) {
             const date = new Date(d);
             return `${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
         }
-
         function formatDateShort(d) {
             const date = new Date(d);
             return `${date.getMonth() + 1}월 ${date.getDate()}일 (${DAYS_KO[date.getDay()]})`;
         }
-
         function formatDuration(sec) {
             if (!sec) return null;
-            const m = Math.floor(sec / 60);
-            const s = sec % 60;
+            const m = Math.floor(sec / 60), s = sec % 60;
             return m > 0 ? `${m}분 ${s}초` : `${s}초`;
         }
-
         function isSameDay(d1, d2) {
             const a = new Date(d1), b = new Date(d2);
             return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
         }
-
-        function getSymptomLabel(key) {
-            return SYMPTOMS.find(s => s.key === key)?.label || key;
-        }
-
-        function getActivityLabel(key) {
-            return ACTIVITIES.find(a => a.key === key)?.label || key;
-        }
-
-        function getSeverityInfo(val) {
-            return SEVERITIES.find(s => s.value === val);
-        }
-
-        function vibrate() {
-            if (navigator.vibrate) navigator.vibrate(50);
-        }
+        function getSymptomLabel(key) { return SYMPTOMS.find(s => s.key === key)?.label || key; }
+        function getActivityLabel(key) { return ACTIVITIES.find(a => a.key === key)?.label || key; }
+        function getSeverityInfo(val) { return SEVERITIES.find(s => s.value === val); }
+        function vibrate() { if (navigator.vibrate) navigator.vibrate(50); }
 
         // ═══════════════════════════════════════
-        // 토스트 컴포넌트
+        // 토스트
         // ═══════════════════════════════════════
         function Toast({ message, show }) {
             if (!show) return null;
             return (
                 <div style={{
-                    position: 'fixed', top: 60, left: '50%', transform: 'translateX(-50%)',
-                    background: 'var(--success)', color: '#fff', padding: '12px 28px',
-                    borderRadius: 16, fontSize: 16, fontWeight: 700, zIndex: 200,
+                    position: 'fixed', top: 60, left: '50%',
+                    transform: 'translateX(-50%)',
+                    background: 'rgba(109,212,184,0.95)',
+                    backdropFilter: 'blur(12px)',
+                    color: '#fff', padding: '14px 32px',
+                    borderRadius: 20, fontSize: 15, fontWeight: 700, zIndex: 200,
                     animation: 'toastIn 0.3s ease',
-                    boxShadow: '0 4px 20px rgba(109,212,184,0.3)'
+                    boxShadow: '0 8px 32px rgba(109,212,184,0.3)'
                 }}>
                     {message}
                 </div>
@@ -277,33 +304,91 @@
         }
 
         // ═══════════════════════════════════════
-        // 탭바 컴포넌트
+        // 탭바 (입체감 있는 하단바)
         // ═══════════════════════════════════════
         function TabBar({ activeTab, onTabChange }) {
             const tabs = [
-                { key: 'home', label: '홈', icon: '🏠' },
-                { key: 'history', label: '기록', icon: '📋' },
-                { key: 'stats', label: '통계', icon: '📊' },
-                { key: 'settings', label: '설정', icon: '⚙️' }
+                { key: 'home', label: '홈', iconActive: (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 10.5L12 3L21 10.5V20C21 20.5 20.5 21 20 21H15V15H9V21H4C3.5 21 3 20.5 3 20V10.5Z" fill="var(--primary)" stroke="var(--primary)" strokeWidth="1.5" strokeLinejoin="round"/>
+                    </svg>
+                ), iconInactive: (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 10.5L12 3L21 10.5V20C21 20.5 20.5 21 20 21H15V15H9V21H4C3.5 21 3 20.5 3 20V10.5Z" stroke="var(--text-sub)" strokeWidth="1.5" strokeLinejoin="round"/>
+                    </svg>
+                )},
+                { key: 'history', label: '기록', iconActive: (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="9" stroke="var(--primary)" strokeWidth="1.5"/>
+                        <path d="M12 7V12L15 15" stroke="var(--primary)" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                ), iconInactive: (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="9" stroke="var(--text-sub)" strokeWidth="1.5"/>
+                        <path d="M12 7V12L15 15" stroke="var(--text-sub)" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                )},
+                { key: 'stats', label: '통계', iconActive: (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <rect x="4" y="13" width="4" height="7" rx="1" fill="var(--primary)"/>
+                        <rect x="10" y="8" width="4" height="12" rx="1" fill="var(--primary)"/>
+                        <rect x="16" y="4" width="4" height="16" rx="1" fill="var(--primary)"/>
+                    </svg>
+                ), iconInactive: (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <rect x="4" y="13" width="4" height="7" rx="1" stroke="var(--text-sub)" strokeWidth="1.5"/>
+                        <rect x="10" y="8" width="4" height="12" rx="1" stroke="var(--text-sub)" strokeWidth="1.5"/>
+                        <rect x="16" y="4" width="4" height="16" rx="1" stroke="var(--text-sub)" strokeWidth="1.5"/>
+                    </svg>
+                )},
+                { key: 'settings', label: '설정', iconActive: (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="3" fill="var(--primary)"/>
+                        <path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" stroke="var(--primary)" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                ), iconInactive: (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="3" stroke="var(--text-sub)" strokeWidth="1.5"/>
+                        <path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" stroke="var(--text-sub)" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                )}
             ];
             return (
                 <nav style={{
                     position: 'fixed', bottom: 0, left: 0, right: 0,
-                    background: '#fff', borderTop: '1px solid var(--border)',
-                    display: 'flex', height: 64,
+                    background: 'rgba(255,255,255,0.85)',
+                    backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+                    borderTop: '1px solid rgba(0,0,0,0.04)',
+                    display: 'flex', height: 72,
                     paddingBottom: 'env(safe-area-inset-bottom)',
                     zIndex: 50
                 }}>
                     {tabs.map(t => (
                         <button key={t.key} onClick={() => onTabChange(t.key)} style={{
                             flex: 1, display: 'flex', flexDirection: 'column',
-                            alignItems: 'center', justifyContent: 'center', gap: 2,
-                            color: activeTab === t.key ? 'var(--primary)' : 'var(--text-sub)',
-                            fontSize: 11, fontWeight: activeTab === t.key ? 800 : 500,
-                            transition: 'color 0.2s'
+                            alignItems: 'center', justifyContent: 'center', gap: 4,
+                            position: 'relative'
                         }}>
-                            <span style={{ fontSize: 22 }}>{t.icon}</span>
-                            <span>{t.label}</span>
+                            {activeTab === t.key && (
+                                <div style={{
+                                    position: 'absolute', top: -1, left: '50%', transform: 'translateX(-50%)',
+                                    width: 24, height: 3, borderRadius: 2,
+                                    background: 'var(--primary)'
+                                }} />
+                            )}
+                            <div style={{
+                                width: 44, height: 44, borderRadius: 16,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                background: activeTab === t.key ? 'var(--primary-soft)' : 'transparent',
+                                transition: 'all 0.25s ease'
+                            }}>
+                                {activeTab === t.key ? t.iconActive : t.iconInactive}
+                            </div>
+                            <span style={{
+                                fontSize: 10, fontWeight: activeTab === t.key ? 800 : 500,
+                                color: activeTab === t.key ? 'var(--primary)' : 'var(--text-sub)',
+                                transition: 'all 0.2s'
+                            }}>{t.label}</span>
                         </button>
                     ))}
                 </nav>
@@ -311,7 +396,7 @@
         }
 
         // ═══════════════════════════════════════
-        // 메인 화면
+        // 메인 화면 (입체감 있는 3D 버튼)
         // ═══════════════════════════════════════
         function MainScreen({ todayCount, onAlarm, timerRunning, timerElapsed, onTimerStart, onTimerStop }) {
             const now = new Date();
@@ -326,75 +411,122 @@
                 <div style={{
                     minHeight: '100vh', minHeight: '100dvh',
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    paddingTop: 80, paddingBottom: 100,
-                    animation: 'fadeIn 0.5s ease'
+                    paddingTop: 'max(60px, env(safe-area-inset-top, 60px))',
+                    paddingBottom: 120,
+                    animation: 'fadeIn 0.5s ease',
+                    position: 'relative', zIndex: 1
                 }}>
-                    {/* 날짜 & 오늘 기록 수 */}
-                    <div style={{ textAlign: 'center', marginBottom: 48 }}>
-                        <p style={{ fontSize: 15, color: 'var(--text-sub)', fontWeight: 600 }}>
+                    {/* 날짜 & 카운트 */}
+                    <div style={{ textAlign: 'left', width: '100%', padding: '0 28px', marginBottom: 48 }}>
+                        <p style={{ fontSize: 15, color: 'var(--text-sub)', fontWeight: 500, letterSpacing: '-0.3px' }}>
                             {formatDate(now)}
                         </p>
-                        <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--primary)', marginTop: 6 }}>
-                            오늘 {todayCount}건
-                        </p>
+                        <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)', marginTop: 6, lineHeight: 1.3 }}>
+                            오늘 하루,
+                        </h1>
+                        <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--primary)', lineHeight: 1.3 }}>
+                            심장 기록 {todayCount}건
+                        </h1>
                     </div>
 
-                    {/* 큰 알람 버튼 */}
-                    <button
-                        onClick={() => { vibrate(); onAlarm(); }}
-                        style={{
-                            width: 160, height: 160, borderRadius: '50%',
-                            background: 'radial-gradient(circle at 40% 40%, var(--primary-light) 0%, var(--primary) 60%, var(--primary-dark) 100%)',
-                            color: '#fff', display: 'flex', flexDirection: 'column',
-                            alignItems: 'center', justifyContent: 'center', gap: 6,
-                            animation: 'pulse 2.5s ease-in-out infinite',
-                            transition: 'transform 0.15s ease',
-                            border: 'none'
-                        }}
-                        onTouchStart={e => e.currentTarget.style.transform = 'scale(0.92)'}
-                        onTouchEnd={e => e.currentTarget.style.transform = 'scale(1)'}
-                        onMouseDown={e => e.currentTarget.style.transform = 'scale(0.92)'}
-                        onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
-                    >
-                        <span style={{ fontSize: 36 }}>💓</span>
-                        <span style={{ fontSize: 18, fontWeight: 800 }}>기록하기</span>
-                    </button>
+                    {/* 3D 알람 버튼 영역 */}
+                    <div style={{
+                        position: 'relative',
+                        width: 240, height: 240,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        marginBottom: 24
+                    }}>
+                        {/* 외부 글로우 링 1 */}
+                        <div style={{
+                            position: 'absolute', inset: 0,
+                            borderRadius: '50%',
+                            background: 'radial-gradient(circle, rgba(255,107,107,0.08) 40%, transparent 70%)',
+                            animation: 'pulse 3s ease-in-out infinite'
+                        }} />
+                        {/* 외부 글로우 링 2 */}
+                        <div style={{
+                            position: 'absolute',
+                            width: 200, height: 200,
+                            left: 20, top: 20,
+                            borderRadius: '50%',
+                            background: 'radial-gradient(circle, rgba(255,107,107,0.12) 30%, transparent 70%)',
+                            animation: 'pulse 3s ease-in-out 0.5s infinite'
+                        }} />
+                        {/* 메인 버튼 */}
+                        <button
+                            onClick={() => { vibrate(); onAlarm(); }}
+                            style={{
+                                width: 160, height: 160, borderRadius: '50%',
+                                background: 'radial-gradient(circle at 35% 30%, #FF9A9A 0%, #FF6B6B 50%, #E85555 100%)',
+                                color: '#fff', display: 'flex', flexDirection: 'column',
+                                alignItems: 'center', justifyContent: 'center', gap: 8,
+                                border: 'none',
+                                boxShadow: '0 8px 32px rgba(255,107,107,0.35), inset 0 -4px 12px rgba(0,0,0,0.1), inset 0 4px 8px rgba(255,255,255,0.25)',
+                                animation: 'pulseGlow 2.5s ease-in-out infinite',
+                                transition: 'transform 0.15s ease',
+                                position: 'relative', zIndex: 2
+                            }}
+                            onTouchStart={e => e.currentTarget.style.transform = 'scale(0.92)'}
+                            onTouchEnd={e => e.currentTarget.style.transform = 'scale(1)'}
+                            onMouseDown={e => e.currentTarget.style.transform = 'scale(0.92)'}
+                            onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+                        >
+                            <span style={{ fontSize: 42, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))', animation: 'heartBeat 1.5s ease-in-out infinite' }}>💓</span>
+                            <span style={{ fontSize: 18, fontWeight: 800, textShadow: '0 1px 3px rgba(0,0,0,0.15)' }}>기록하기</span>
+                        </button>
+                    </div>
 
                     {/* 안내 문구 */}
-                    <p style={{ marginTop: 20, fontSize: 15, color: 'var(--text-sub)', fontWeight: 500 }}>
-                        두근거릴 때 눌러주세요
+                    <p style={{
+                        fontSize: 15, color: 'var(--text-sub)', fontWeight: 500,
+                        textAlign: 'center', lineHeight: 1.6, marginBottom: 36
+                    }}>
+                        심장이 두근거리거나 불편하면<br/>
+                        가운데 버튼을 눌러주세요
                     </p>
 
-                    {/* 타이머 */}
-                    <div style={{
-                        marginTop: 48, display: 'flex', alignItems: 'center', gap: 16,
-                        background: 'var(--card)', borderRadius: 20, padding: '14px 24px',
-                        boxShadow: '0 2px 12px rgba(0,0,0,0.04)'
+                    {/* 타이머 카드 */}
+                    <div className="glass-card" style={{
+                        margin: '0 24px', padding: '18px 24px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        width: 'calc(100% - 48px)', maxWidth: 380
                     }}>
-                        {!timerRunning ? (
-                            <button onClick={onTimerStart} style={{
-                                padding: '10px 20px', borderRadius: 14,
-                                background: 'var(--bg-sub)', color: 'var(--primary)',
-                                fontSize: 15, fontWeight: 700
-                            }}>시작</button>
-                        ) : (
-                            <button onClick={onTimerStop} style={{
-                                padding: '10px 20px', borderRadius: 14,
-                                background: 'var(--primary)', color: '#fff',
-                                fontSize: 15, fontWeight: 700
-                            }}>멈추기</button>
-                        )}
-                        <span style={{
-                            fontSize: 24, fontWeight: 800, fontVariantNumeric: 'tabular-nums',
-                            color: timerRunning ? 'var(--primary)' : 'var(--text-sub)',
-                            minWidth: 72, textAlign: 'center'
-                        }}>
-                            {timerDisplay()}
-                        </span>
+                        <div>
+                            <p style={{ fontSize: 13, color: 'var(--text-sub)', fontWeight: 600, marginBottom: 4 }}>
+                                ⏱ 증상 지속 시간 측정
+                            </p>
+                            <span style={{
+                                fontSize: 36, fontWeight: 800, fontVariantNumeric: 'tabular-nums',
+                                color: timerRunning ? 'var(--text)' : 'var(--text-sub)',
+                                letterSpacing: '2px'
+                            }}>
+                                {timerDisplay()}
+                            </span>
+                        </div>
+                        <button
+                            onClick={timerRunning ? onTimerStop : onTimerStart}
+                            style={{
+                                width: 52, height: 52, borderRadius: '50%',
+                                background: timerRunning
+                                    ? 'linear-gradient(135deg, var(--primary), var(--primary-dark))'
+                                    : 'var(--bg-sub)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                boxShadow: timerRunning ? '0 4px 16px rgba(255,107,107,0.3)' : 'var(--shadow-sm)',
+                                transition: 'all 0.3s ease'
+                            }}
+                        >
+                            {timerRunning ? (
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="white">
+                                    <rect x="4" y="3" width="4" height="14" rx="1"/>
+                                    <rect x="12" y="3" width="4" height="14" rx="1"/>
+                                </svg>
+                            ) : (
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="var(--primary)">
+                                    <path d="M5 3L17 10L5 17V3Z"/>
+                                </svg>
+                            )}
+                        </button>
                     </div>
-                    <p style={{ marginTop: 8, fontSize: 13, color: 'var(--text-sub)' }}>
-                        증상 지속 시간 측정
-                    </p>
                 </div>
             );
         }
@@ -410,34 +542,21 @@
             const [timestamp] = useState(() => new Date().toISOString());
             const [saving, setSaving] = useState(false);
             const [error, setError] = useState('');
-            const panelRef = useRef(null);
 
             useEffect(() => {
-                if (isOpen) {
-                    setSymptoms([]); setSeverity(null); setActivity(null);
-                    setMemo(''); setSaving(false); setError('');
-                }
+                if (isOpen) { setSymptoms([]); setSeverity(null); setActivity(null); setMemo(''); setSaving(false); setError(''); }
             }, [isOpen]);
 
-            const toggleSymptom = (key) => {
-                setError('');
-                setSymptoms(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
-            };
+            const toggleSymptom = (key) => { setError(''); setSymptoms(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]); };
 
             const handleSave = () => {
                 if (symptoms.length === 0) { setError('증상을 선택해주세요'); return; }
-                setSaving(true);
-                vibrate();
-                const durationSeconds = timerElapsed ? Math.floor(timerElapsed / 1000) : null;
+                setSaving(true); vibrate();
                 setTimeout(() => {
                     onSave({
                         id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2),
-                        timestamp,
-                        symptoms,
-                        severity: severity || 1,
-                        activity: activity || 'rest',
-                        durationSeconds,
-                        memo
+                        timestamp, symptoms, severity: severity || 1, activity: activity || 'rest',
+                        durationSeconds: timerElapsed ? Math.floor(timerElapsed / 1000) : null, memo
                     });
                 }, 500);
             };
@@ -446,11 +565,12 @@
 
             const chipStyle = (selected) => ({
                 display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '12px 18px', borderRadius: 18,
-                border: `2px solid ${selected ? 'var(--primary)' : 'var(--border)'}`,
-                background: selected ? 'var(--primary)' : '#fff',
+                padding: '12px 18px', borderRadius: 20,
+                border: `2px solid ${selected ? 'var(--primary)' : 'rgba(0,0,0,0.06)'}`,
+                background: selected ? 'var(--primary)' : 'rgba(255,255,255,0.9)',
                 color: selected ? '#fff' : 'var(--text)',
                 fontSize: 15, fontWeight: 600,
+                boxShadow: selected ? '0 4px 16px rgba(255,107,107,0.25)' : 'var(--shadow-sm)',
                 transition: 'all 0.2s ease',
                 animation: selected ? 'chipPop 0.25s ease' : 'none'
             });
@@ -458,68 +578,65 @@
             return (
                 <div style={{
                     position: 'fixed', inset: 0, zIndex: 100,
-                    background: '#fff',
+                    background: 'var(--bg)',
                     animation: 'slideUp 0.35s cubic-bezier(0.33, 1, 0.68, 1)',
                     overflowY: 'auto', WebkitOverflowScrolling: 'touch'
-                }} ref={panelRef}>
-                    <div style={{ maxWidth: 500, margin: '0 auto', padding: '20px 20px 40px' }}>
+                }}>
+                    <div style={{ maxWidth: 500, margin: '0 auto', padding: '20px 24px 40px' }}>
                         {/* 헤더 */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
                             <button onClick={onClose} style={{
-                                width: 44, height: 44, borderRadius: 14,
-                                background: 'var(--bg-sub)', display: 'flex',
-                                alignItems: 'center', justifyContent: 'center', fontSize: 20
+                                width: 44, height: 44, borderRadius: 16,
+                                background: 'rgba(0,0,0,0.04)', display: 'flex',
+                                alignItems: 'center', justifyContent: 'center', fontSize: 18
                             }}>✕</button>
-                            <span style={{ fontSize: 15, color: 'var(--text-sub)', fontWeight: 600 }}>
+                            <span style={{ fontSize: 14, color: 'var(--text-sub)', fontWeight: 600 }}>
                                 기록 중 · {formatTime(timestamp)}
                             </span>
                         </div>
 
-                        {/* 1. 증상 선택 */}
-                        <section style={{ marginBottom: 28 }}>
-                            <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 12, color: 'var(--text)' }}>
-                                1. 어떤 증상이야? <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-sub)' }}>(여러 개 가능)</span>
+                        {/* 1. 증상 */}
+                        <section style={{ marginBottom: 32 }}>
+                            <h3 style={{ fontSize: 17, fontWeight: 800, marginBottom: 14 }}>
+                                어떤 증상이야? <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-sub)' }}>(여러 개 가능)</span>
                             </h3>
-                            {error && <p style={{ color: '#e74c3c', fontSize: 14, fontWeight: 600, marginBottom: 8 }}>{error}</p>}
+                            {error && <p style={{ color: '#FF6B6B', fontSize: 14, fontWeight: 600, marginBottom: 10 }}>{error}</p>}
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
                                 {SYMPTOMS.map(s => (
-                                    <button key={s.key} onClick={() => toggleSymptom(s.key)}
-                                        style={chipStyle(symptoms.includes(s.key))}>
+                                    <button key={s.key} onClick={() => toggleSymptom(s.key)} style={chipStyle(symptoms.includes(s.key))}>
                                         <span>{s.icon}</span> {s.label}
                                     </button>
                                 ))}
                             </div>
                         </section>
 
-                        {/* 2. 강도 선택 */}
-                        <section style={{ marginBottom: 28 }}>
-                            <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>2. 얼마나 힘들어?</h3>
+                        {/* 2. 강도 */}
+                        <section style={{ marginBottom: 32 }}>
+                            <h3 style={{ fontSize: 17, fontWeight: 800, marginBottom: 14 }}>얼마나 힘들어?</h3>
                             <div style={{ display: 'flex', gap: 10 }}>
                                 {SEVERITIES.map(s => (
                                     <button key={s.value} onClick={() => setSeverity(s.value)} style={{
-                                        flex: 1, padding: '14px 4px', borderRadius: 18,
-                                        border: `2px solid ${severity === s.value ? s.color : 'var(--border)'}`,
-                                        background: severity === s.value ? `${s.color}18` : '#fff',
-                                        display: 'flex', flexDirection: 'column',
-                                        alignItems: 'center', gap: 4,
+                                        flex: 1, padding: '16px 4px', borderRadius: 20,
+                                        border: `2px solid ${severity === s.value ? s.color : 'rgba(0,0,0,0.05)'}`,
+                                        background: severity === s.value ? `${s.color}18` : 'rgba(255,255,255,0.9)',
+                                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                                         transform: severity === s.value ? 'scale(1.05)' : 'scale(1)',
                                         transition: 'all 0.2s ease',
-                                        boxShadow: severity === s.value ? `0 4px 16px ${s.color}30` : 'none'
+                                        boxShadow: severity === s.value ? `0 4px 16px ${s.color}30` : 'var(--shadow-sm)'
                                     }}>
-                                        <span style={{ fontSize: 28 }}>{s.emoji}</span>
+                                        <span style={{ fontSize: 30 }}>{s.emoji}</span>
                                         <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-sub)' }}>{s.label}</span>
                                     </button>
                                 ))}
                             </div>
                         </section>
 
-                        {/* 3. 활동 상태 */}
-                        <section style={{ marginBottom: 28 }}>
-                            <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>3. 뭐하고 있었어?</h3>
+                        {/* 3. 활동 */}
+                        <section style={{ marginBottom: 32 }}>
+                            <h3 style={{ fontSize: 17, fontWeight: 800, marginBottom: 14 }}>뭐하고 있었어?</h3>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
                                 {ACTIVITIES.map(a => (
-                                    <button key={a.key} onClick={() => setActivity(a.key)}
-                                        style={chipStyle(activity === a.key)}>
+                                    <button key={a.key} onClick={() => setActivity(a.key)} style={chipStyle(activity === a.key)}>
                                         <span>{a.icon}</span> {a.label}
                                     </button>
                                 ))}
@@ -527,31 +644,32 @@
                         </section>
 
                         {/* 4. 메모 */}
-                        <section style={{ marginBottom: 32 }}>
-                            <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>
-                                4. 메모 <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-sub)' }}>(선택)</span>
+                        <section style={{ marginBottom: 36 }}>
+                            <h3 style={{ fontSize: 17, fontWeight: 800, marginBottom: 14 }}>
+                                메모 <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-sub)' }}>(선택)</span>
                             </h3>
                             <textarea
                                 value={memo} onChange={e => setMemo(e.target.value)}
                                 placeholder="더 하고 싶은 말이 있으면 적어줘"
                                 style={{
-                                    width: '100%', height: 80, borderRadius: 16,
-                                    border: '2px solid var(--border)', padding: 14,
+                                    width: '100%', height: 88, borderRadius: 20,
+                                    border: '2px solid rgba(0,0,0,0.05)', padding: 16,
                                     fontSize: 15, fontFamily: 'inherit', resize: 'none',
-                                    background: '#fff', color: 'var(--text)'
+                                    background: 'rgba(255,255,255,0.9)', color: 'var(--text)',
+                                    boxShadow: 'var(--shadow-sm)'
                                 }}
                             />
                         </section>
 
                         {/* 저장 버튼 */}
                         <button onClick={handleSave} disabled={saving} style={{
-                            width: '100%', height: 60, borderRadius: 20,
-                            background: saving ? 'var(--success)' : 'linear-gradient(135deg, var(--primary-light), var(--primary))',
+                            width: '100%', height: 60, borderRadius: 22,
+                            background: saving ? 'var(--success)' : 'linear-gradient(135deg, #FF9A9A, #FF6B6B)',
                             color: '#fff', fontSize: 18, fontWeight: 800,
                             transition: 'all 0.3s ease',
-                            boxShadow: '0 4px 20px var(--primary-glow)'
+                            boxShadow: saving ? '0 4px 20px rgba(109,212,184,0.3)' : '0 6px 24px rgba(255,107,107,0.3)'
                         }}>
-                            {saving ? '✓ 저장했어요!' : '💾 저장하기'}
+                            {saving ? '✓ 저장했어요!' : '저장하기'}
                         </button>
                     </div>
                 </div>
@@ -567,68 +685,42 @@
             return (
                 <div style={{
                     position: 'fixed', inset: 0, zIndex: 110,
-                    background: 'rgba(0,0,0,0.3)',
+                    background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(4px)',
                     display: 'flex', alignItems: 'flex-end', justifyContent: 'center'
                 }} onClick={onClose}>
                     <div style={{
-                        background: '#fff', borderRadius: '24px 24px 0 0',
+                        background: '#fff', borderRadius: '28px 28px 0 0',
                         width: '100%', maxWidth: 500, padding: '28px 24px 40px',
-                        animation: 'slideUp 0.3s ease'
+                        animation: 'slideUp 0.3s ease',
+                        boxShadow: '0 -4px 40px rgba(0,0,0,0.08)'
                     }} onClick={e => e.stopPropagation()}>
+                        <div style={{ width: 40, height: 4, borderRadius: 2, background: 'rgba(0,0,0,0.1)', margin: '0 auto 20px' }} />
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                            <h3 style={{ fontSize: 18, fontWeight: 800 }}>기록 상세</h3>
+                            <h3 style={{ fontSize: 20, fontWeight: 800 }}>기록 상세</h3>
                             <button onClick={onClose} style={{
-                                width: 40, height: 40, borderRadius: 12,
-                                background: 'var(--bg-sub)', fontSize: 18,
+                                width: 40, height: 40, borderRadius: 14,
+                                background: 'rgba(0,0,0,0.04)', fontSize: 16,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center'
                             }}>✕</button>
                         </div>
-
-                        <p style={{ fontSize: 14, color: 'var(--text-sub)', marginBottom: 16 }}>
+                        <p style={{ fontSize: 14, color: 'var(--text-sub)', marginBottom: 18 }}>
                             {formatDateShort(record.timestamp)} {formatTime(record.timestamp)}
                         </p>
-
                         <div style={{ marginBottom: 14 }}>
-                            <p style={{ fontSize: 13, color: 'var(--text-sub)', fontWeight: 600, marginBottom: 6 }}>증상</p>
+                            <p style={{ fontSize: 13, color: 'var(--text-sub)', fontWeight: 600, marginBottom: 8 }}>증상</p>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                                 {record.symptoms.map(s => (
-                                    <span key={s} style={{
-                                        padding: '6px 14px', borderRadius: 12,
-                                        background: 'var(--bg-sub)', fontSize: 14, fontWeight: 600
-                                    }}>{getSymptomLabel(s)}</span>
+                                    <span key={s} style={{ padding: '8px 14px', borderRadius: 14, background: 'var(--bg-sub)', fontSize: 14, fontWeight: 600 }}>{getSymptomLabel(s)}</span>
                                 ))}
                             </div>
                         </div>
-
-                        {sevInfo && (
-                            <div style={{ marginBottom: 14 }}>
-                                <p style={{ fontSize: 13, color: 'var(--text-sub)', fontWeight: 600, marginBottom: 6 }}>힘든 정도</p>
-                                <span style={{ fontSize: 16 }}>{sevInfo.emoji} {sevInfo.label}</span>
-                            </div>
-                        )}
-
-                        <div style={{ marginBottom: 14 }}>
-                            <p style={{ fontSize: 13, color: 'var(--text-sub)', fontWeight: 600, marginBottom: 6 }}>활동</p>
-                            <span style={{ fontSize: 16 }}>{getActivityLabel(record.activity)}</span>
-                        </div>
-
-                        {record.durationSeconds && (
-                            <div style={{ marginBottom: 14 }}>
-                                <p style={{ fontSize: 13, color: 'var(--text-sub)', fontWeight: 600, marginBottom: 6 }}>지속 시간</p>
-                                <span style={{ fontSize: 16 }}>{formatDuration(record.durationSeconds)}</span>
-                            </div>
-                        )}
-
-                        {record.memo && (
-                            <div style={{ marginBottom: 14 }}>
-                                <p style={{ fontSize: 13, color: 'var(--text-sub)', fontWeight: 600, marginBottom: 6 }}>메모</p>
-                                <p style={{ fontSize: 15, lineHeight: 1.5, background: 'var(--bg-sub)', padding: 14, borderRadius: 14 }}>{record.memo}</p>
-                            </div>
-                        )}
-
+                        {sevInfo && <div style={{ marginBottom: 14 }}><p style={{ fontSize: 13, color: 'var(--text-sub)', fontWeight: 600, marginBottom: 6 }}>힘든 정도</p><span style={{ fontSize: 16 }}>{sevInfo.emoji} {sevInfo.label}</span></div>}
+                        <div style={{ marginBottom: 14 }}><p style={{ fontSize: 13, color: 'var(--text-sub)', fontWeight: 600, marginBottom: 6 }}>활동</p><span style={{ fontSize: 16 }}>{getActivityLabel(record.activity)}</span></div>
+                        {record.durationSeconds && <div style={{ marginBottom: 14 }}><p style={{ fontSize: 13, color: 'var(--text-sub)', fontWeight: 600, marginBottom: 6 }}>지속 시간</p><span style={{ fontSize: 16 }}>{formatDuration(record.durationSeconds)}</span></div>}
+                        {record.memo && <div style={{ marginBottom: 14 }}><p style={{ fontSize: 13, color: 'var(--text-sub)', fontWeight: 600, marginBottom: 6 }}>메모</p><p style={{ fontSize: 15, lineHeight: 1.5, background: 'var(--bg-sub)', padding: 14, borderRadius: 16 }}>{record.memo}</p></div>}
                         <button onClick={() => onDelete(record.id)} style={{
-                            width: '100%', marginTop: 12, padding: '14px', borderRadius: 16,
-                            background: '#FFF0ED', color: '#D6714E',
+                            width: '100%', marginTop: 12, padding: '15px', borderRadius: 18,
+                            background: 'rgba(255,107,107,0.08)', color: 'var(--primary)',
                             fontSize: 15, fontWeight: 700
                         }}>삭제하기</button>
                     </div>
@@ -637,7 +729,7 @@
         }
 
         // ═══════════════════════════════════════
-        // 기록 목록 화면
+        // 기록 목록
         // ═══════════════════════════════════════
         function RecordScreen({ records, onDeleteRecord }) {
             const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
@@ -650,63 +742,25 @@
                 return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
             }).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-            // 날짜별 그룹핑
             const groups = {};
-            filtered.forEach(r => {
-                const dateKey = new Date(r.timestamp).toDateString();
-                if (!groups[dateKey]) groups[dateKey] = [];
-                groups[dateKey].push(r);
-            });
+            filtered.forEach(r => { const k = new Date(r.timestamp).toDateString(); if (!groups[k]) groups[k] = []; groups[k].push(r); });
 
-            const prevMonth = () => {
-                if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(y => y - 1); }
-                else setCurrentMonth(m => m - 1);
-            };
-            const nextMonth = () => {
-                if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear(y => y + 1); }
-                else setCurrentMonth(m => m + 1);
-            };
-
-            const handleDelete = (id) => {
-                setConfirmDelete(id);
-            };
-
-            const confirmDeleteAction = () => {
-                onDeleteRecord(confirmDelete);
-                setConfirmDelete(null);
-                setSelectedRecord(null);
-            };
+            const prevMonth = () => { if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(y => y - 1); } else setCurrentMonth(m => m - 1); };
+            const nextMonth = () => { if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear(y => y + 1); } else setCurrentMonth(m => m + 1); };
+            const handleDelete = (id) => setConfirmDelete(id);
+            const confirmDeleteAction = () => { onDeleteRecord(confirmDelete); setConfirmDelete(null); setSelectedRecord(null); };
 
             return (
-                <div style={{
-                    minHeight: '100vh', minHeight: '100dvh',
-                    paddingTop: 24, paddingBottom: 100,
-                    maxWidth: 500, margin: '0 auto', padding: '24px 20px 100px',
-                    animation: 'fadeIn 0.4s ease'
-                }}>
-                    <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 20 }}>기록 목록</h2>
-
-                    {/* 월 네비게이션 */}
-                    <div style={{
-                        display: 'flex', justifyContent: 'center', alignItems: 'center',
-                        gap: 28, marginBottom: 24
-                    }}>
-                        <button onClick={prevMonth} style={{
-                            width: 44, height: 44, borderRadius: 14,
-                            background: 'var(--bg-sub)', fontSize: 18,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}>◀</button>
-                        <span style={{ fontSize: 18, fontWeight: 800, minWidth: 80, textAlign: 'center' }}>
+                <div style={{ minHeight: '100dvh', maxWidth: 500, margin: '0 auto', padding: '24px 20px 100px', animation: 'fadeIn 0.4s ease', position: 'relative', zIndex: 1 }}>
+                    <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 20 }}>기록 목록</h2>
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 28, marginBottom: 24 }}>
+                        <button onClick={prevMonth} style={{ width: 44, height: 44, borderRadius: 16, background: 'rgba(0,0,0,0.04)', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>◀</button>
+                        <span style={{ fontSize: 18, fontWeight: 800, minWidth: 100, textAlign: 'center' }}>
                             {currentYear === new Date().getFullYear() ? '' : `${currentYear}년 `}{currentMonth + 1}월
                         </span>
-                        <button onClick={nextMonth} style={{
-                            width: 44, height: 44, borderRadius: 14,
-                            background: 'var(--bg-sub)', fontSize: 18,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}>▶</button>
+                        <button onClick={nextMonth} style={{ width: 44, height: 44, borderRadius: 16, background: 'rgba(0,0,0,0.04)', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▶</button>
                     </div>
 
-                    {/* 기록이 없을 때 */}
                     {filtered.length === 0 && (
                         <div style={{ textAlign: 'center', paddingTop: 80, color: 'var(--text-sub)' }}>
                             <p style={{ fontSize: 48, marginBottom: 12 }}>📝</p>
@@ -714,62 +768,29 @@
                         </div>
                     )}
 
-                    {/* 날짜별 그룹 */}
                     {Object.entries(groups).map(([dateKey, recs]) => (
                         <div key={dateKey} style={{ marginBottom: 20 }}>
-                            <div style={{
-                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                padding: '8px 0', marginBottom: 8,
-                                borderBottom: '1px solid var(--border)'
-                            }}>
-                                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-sub)' }}>
-                                    {formatDateShort(recs[0].timestamp)}
-                                </span>
-                                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)' }}>
-                                    {recs.length}건
-                                </span>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 4px', marginBottom: 8 }}>
+                                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-sub)' }}>{formatDateShort(recs[0].timestamp)}</span>
+                                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)' }}>{recs.length}건</span>
                             </div>
-
                             {recs.map(r => {
                                 const sevInfo = getSeverityInfo(r.severity);
                                 return (
-                                    <button key={r.id} onClick={() => setSelectedRecord(r)} style={{
-                                        width: '100%', textAlign: 'left',
-                                        background: 'var(--card)', borderRadius: 18,
-                                        padding: '16px 18px', marginBottom: 8,
-                                        boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
-                                        transition: 'transform 0.15s',
-                                        display: 'block'
+                                    <button key={r.id} onClick={() => setSelectedRecord(r)} className="glass-card" style={{
+                                        width: '100%', textAlign: 'left', padding: '16px 18px', marginBottom: 10,
+                                        display: 'block', transition: 'transform 0.15s'
                                     }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                                            <span style={{ fontSize: 13, color: 'var(--text-sub)', fontWeight: 700 }}>
-                                                {formatTime(r.timestamp)}
-                                            </span>
-                                            {r.durationSeconds && (
-                                                <span style={{ fontSize: 12, color: 'var(--text-sub)' }}>⏱ {formatDuration(r.durationSeconds)}</span>
-                                            )}
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                                            <span style={{ fontSize: 13, color: 'var(--text-sub)', fontWeight: 700 }}>{formatTime(r.timestamp)}</span>
+                                            {r.durationSeconds && <span style={{ fontSize: 12, color: 'var(--text-sub)' }}>⏱ {formatDuration(r.durationSeconds)}</span>}
                                         </div>
-                                        <p style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>
-                                            {r.symptoms.map(getSymptomLabel).join(', ')}
-                                        </p>
+                                        <p style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{r.symptoms.map(getSymptomLabel).join(', ')}</p>
                                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                                            {sevInfo && (
-                                                <span style={{
-                                                    padding: '4px 10px', borderRadius: 10,
-                                                    background: `${sevInfo.color}20`, fontSize: 13, fontWeight: 600
-                                                }}>{sevInfo.emoji} {sevInfo.label}</span>
-                                            )}
-                                            <span style={{
-                                                padding: '4px 10px', borderRadius: 10,
-                                                background: 'var(--bg-sub)', fontSize: 13, fontWeight: 600
-                                            }}>{getActivityLabel(r.activity)}</span>
+                                            {sevInfo && <span style={{ padding: '4px 12px', borderRadius: 12, background: `${sevInfo.color}20`, fontSize: 13, fontWeight: 600 }}>{sevInfo.emoji} {sevInfo.label}</span>}
+                                            <span style={{ padding: '4px 12px', borderRadius: 12, background: 'var(--bg-sub)', fontSize: 13, fontWeight: 600 }}>{getActivityLabel(r.activity)}</span>
                                         </div>
-                                        {r.memo && (
-                                            <p style={{
-                                                marginTop: 8, fontSize: 13, color: 'var(--text-sub)',
-                                                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-                                            }}>💬 {r.memo}</p>
-                                        )}
+                                        {r.memo && <p style={{ marginTop: 8, fontSize: 13, color: 'var(--text-sub)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>💬 {r.memo}</p>}
                                     </button>
                                 );
                             })}
@@ -777,28 +798,13 @@
                     ))}
 
                     <RecordDetailModal record={selectedRecord} onClose={() => setSelectedRecord(null)} onDelete={handleDelete} />
-
-                    {/* 삭제 확인 모달 */}
                     {confirmDelete && (
-                        <div style={{
-                            position: 'fixed', inset: 0, zIndex: 120,
-                            background: 'rgba(0,0,0,0.4)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}>
-                            <div style={{
-                                background: '#fff', borderRadius: 24, padding: '28px 24px',
-                                width: '85%', maxWidth: 320, textAlign: 'center'
-                            }}>
+                        <div style={{ position: 'fixed', inset: 0, zIndex: 120, background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ background: '#fff', borderRadius: 28, padding: '28px 24px', width: '85%', maxWidth: 320, textAlign: 'center', boxShadow: 'var(--shadow-lg)' }}>
                                 <p style={{ fontSize: 17, fontWeight: 700, marginBottom: 20 }}>이 기록을 삭제할까요?</p>
                                 <div style={{ display: 'flex', gap: 10 }}>
-                                    <button onClick={() => setConfirmDelete(null)} style={{
-                                        flex: 1, padding: '14px', borderRadius: 14,
-                                        background: 'var(--bg-sub)', fontSize: 15, fontWeight: 700, color: 'var(--text-sub)'
-                                    }}>취소</button>
-                                    <button onClick={confirmDeleteAction} style={{
-                                        flex: 1, padding: '14px', borderRadius: 14,
-                                        background: '#FFF0ED', fontSize: 15, fontWeight: 700, color: '#D6714E'
-                                    }}>삭제</button>
+                                    <button onClick={() => setConfirmDelete(null)} style={{ flex: 1, padding: '15px', borderRadius: 16, background: 'rgba(0,0,0,0.04)', fontSize: 15, fontWeight: 700, color: 'var(--text-sub)' }}>취소</button>
+                                    <button onClick={confirmDeleteAction} style={{ flex: 1, padding: '15px', borderRadius: 16, background: 'rgba(255,107,107,0.1)', fontSize: 15, fontWeight: 700, color: 'var(--primary)' }}>삭제</button>
                                 </div>
                             </div>
                         </div>
@@ -808,218 +814,135 @@
         }
 
         // ═══════════════════════════════════════
-        // 통계 화면
+        // 통계
         // ═══════════════════════════════════════
         function StatsScreen({ records }) {
             const [period, setPeriod] = useState('week');
             const [copied, setCopied] = useState(false);
             const now = new Date();
 
-            // 기간 필터
             const getStartDate = () => {
                 const d = new Date(now);
-                if (period === 'week') {
-                    const day = d.getDay();
-                    d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
-                } else {
-                    d.setDate(1);
-                }
-                d.setHours(0, 0, 0, 0);
-                return d;
+                if (period === 'week') { const day = d.getDay(); d.setDate(d.getDate() - (day === 0 ? 6 : day - 1)); }
+                else d.setDate(1);
+                d.setHours(0, 0, 0, 0); return d;
             };
 
             const startDate = getStartDate();
             const filtered = records.filter(r => new Date(r.timestamp) >= startDate);
 
-            // 요일별 카운트 (주간)
             const dailyCounts = (() => {
                 if (period === 'week') {
-                    const counts = [0, 0, 0, 0, 0, 0, 0];
-                    filtered.forEach(r => {
-                        const d = new Date(r.timestamp);
-                        let dayIdx = d.getDay() - 1;
-                        if (dayIdx < 0) dayIdx = 6;
-                        counts[dayIdx]++;
-                    });
+                    const counts = [0,0,0,0,0,0,0];
+                    filtered.forEach(r => { let di = new Date(r.timestamp).getDay() - 1; if (di < 0) di = 6; counts[di]++; });
                     return counts;
                 } else {
-                    // 월간: 주차별
-                    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-                    const weeks = Math.ceil(daysInMonth / 7);
-                    const counts = new Array(weeks).fill(0);
-                    filtered.forEach(r => {
-                        const d = new Date(r.timestamp);
-                        const weekIdx = Math.floor((d.getDate() - 1) / 7);
-                        if (weekIdx < counts.length) counts[weekIdx]++;
-                    });
+                    const dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+                    const weeks = Math.ceil(dim / 7); const counts = new Array(weeks).fill(0);
+                    filtered.forEach(r => { const wi = Math.floor((new Date(r.timestamp).getDate() - 1) / 7); if (wi < counts.length) counts[wi]++; });
                     return counts;
                 }
             })();
-
             const maxCount = Math.max(...dailyCounts, 1);
 
-            // 증상 랭킹
             const symptomCounts = {};
             filtered.forEach(r => r.symptoms.forEach(s => { symptomCounts[s] = (symptomCounts[s] || 0) + 1; }));
             const symptomRanking = Object.entries(symptomCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-
-            // 활동 랭킹
             const activityCounts = {};
             filtered.forEach(r => { activityCounts[r.activity] = (activityCounts[r.activity] || 0) + 1; });
             const activityRanking = Object.entries(activityCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
             const maxSymptomCount = symptomRanking.length > 0 ? symptomRanking[0][1] : 1;
 
-            // 내보내기
             const handleExport = () => {
                 const lines = ['=== 심장 기록 (Heart Log) ==='];
                 const sortedAll = [...records].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                if (sortedAll.length === 0) { lines.push('기록이 없습니다.'); }
+                if (sortedAll.length === 0) lines.push('기록이 없습니다.');
                 else {
-                    const first = sortedAll[sortedAll.length - 1];
-                    const last = sortedAll[0];
-                    lines.push(`기간: ${new Date(first.timestamp).toLocaleDateString('ko-KR')} ~ ${new Date(last.timestamp).toLocaleDateString('ko-KR')}`);
-                    lines.push(`총 기록: ${sortedAll.length}건`);
-                    lines.push('');
+                    lines.push(`기간: ${new Date(sortedAll[sortedAll.length-1].timestamp).toLocaleDateString('ko-KR')} ~ ${new Date(sortedAll[0].timestamp).toLocaleDateString('ko-KR')}`);
+                    lines.push(`총 기록: ${sortedAll.length}건\n`);
                     sortedAll.forEach(r => {
-                        const sevInfo = getSeverityInfo(r.severity);
+                        const si = getSeverityInfo(r.severity);
                         lines.push('---');
                         lines.push(`${formatDateShort(r.timestamp)} ${formatTime(r.timestamp)}`);
                         lines.push(`증상: ${r.symptoms.map(getSymptomLabel).join(', ')}`);
-                        if (sevInfo) lines.push(`힘든 정도: ${sevInfo.emoji} ${sevInfo.label}`);
+                        if (si) lines.push(`힘든 정도: ${si.emoji} ${si.label}`);
                         lines.push(`상황: ${getActivityLabel(r.activity)}`);
                         if (r.durationSeconds) lines.push(`지속시간: ${formatDuration(r.durationSeconds)}`);
                         if (r.memo) lines.push(`메모: ${r.memo}`);
                         lines.push('');
                     });
                 }
-
                 const text = lines.join('\n');
-                navigator.clipboard.writeText(text).then(() => {
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                }).catch(() => {
-                    // 폴백: textarea에서 복사
-                    const ta = document.createElement('textarea');
-                    ta.value = text;
-                    document.body.appendChild(ta);
-                    ta.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(ta);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                });
+                navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); })
+                .catch(() => { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); setCopied(true); setTimeout(() => setCopied(false), 2000); });
             };
 
-            const barLabels = period === 'week'
-                ? ['월', '화', '수', '목', '금', '토', '일']
-                : dailyCounts.map((_, i) => `${i + 1}주`);
+            const barLabels = period === 'week' ? ['월','화','수','목','금','토','일'] : dailyCounts.map((_,i) => `${i+1}주`);
 
             return (
-                <div style={{
-                    minHeight: '100vh', minHeight: '100dvh',
-                    maxWidth: 500, margin: '0 auto', padding: '24px 20px 100px',
-                    animation: 'fadeIn 0.4s ease'
-                }}>
-                    <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 20 }}>통계</h2>
-
-                    {/* 기간 토글 */}
-                    <div style={{
-                        display: 'flex', background: 'var(--bg-sub)', borderRadius: 14, padding: 4, marginBottom: 24
-                    }}>
-                        {['week', 'month'].map(p => (
+                <div style={{ minHeight: '100dvh', maxWidth: 500, margin: '0 auto', padding: '24px 20px 100px', animation: 'fadeIn 0.4s ease', position: 'relative', zIndex: 1 }}>
+                    <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 20 }}>통계</h2>
+                    <div style={{ display: 'flex', background: 'rgba(0,0,0,0.04)', borderRadius: 16, padding: 4, marginBottom: 24 }}>
+                        {['week','month'].map(p => (
                             <button key={p} onClick={() => setPeriod(p)} style={{
-                                flex: 1, padding: '10px', borderRadius: 12,
+                                flex: 1, padding: '11px', borderRadius: 14,
                                 background: period === p ? '#fff' : 'transparent',
-                                boxShadow: period === p ? '0 2px 8px rgba(0,0,0,0.06)' : 'none',
+                                boxShadow: period === p ? 'var(--shadow-md)' : 'none',
                                 fontSize: 15, fontWeight: 700,
                                 color: period === p ? 'var(--primary)' : 'var(--text-sub)',
-                                transition: 'all 0.2s'
-                            }}>
-                                {p === 'week' ? '이번 주' : '이번 달'}
-                            </button>
+                                transition: 'all 0.25s'
+                            }}>{p === 'week' ? '이번 주' : '이번 달'}</button>
                         ))}
                     </div>
 
-                    {/* 총 기록 */}
-                    <div style={{
-                        background: '#fff', borderRadius: 22, padding: '24px', marginBottom: 16,
-                        boxShadow: '0 2px 12px rgba(0,0,0,0.03)', textAlign: 'center'
-                    }}>
+                    <div className="glass-card" style={{ padding: 24, marginBottom: 16, textAlign: 'center' }}>
                         <p style={{ fontSize: 14, color: 'var(--text-sub)', fontWeight: 600, marginBottom: 4 }}>총 기록</p>
-                        <p style={{ fontSize: 40, fontWeight: 900, color: 'var(--primary)' }}>{filtered.length}<span style={{ fontSize: 18 }}>건</span></p>
+                        <p style={{ fontSize: 44, fontWeight: 900, color: 'var(--primary)' }}>{filtered.length}<span style={{ fontSize: 18 }}>건</span></p>
                     </div>
 
-                    {/* 막대 그래프 */}
-                    <div style={{
-                        background: '#fff', borderRadius: 22, padding: '20px', marginBottom: 16,
-                        boxShadow: '0 2px 12px rgba(0,0,0,0.03)'
-                    }}>
-                        <div style={{
-                            height: 140, display: 'flex', alignItems: 'flex-end',
-                            justifyContent: 'space-around', gap: 6, paddingBottom: 4
-                        }}>
+                    <div className="glass-card" style={{ padding: 20, marginBottom: 16 }}>
+                        <div style={{ height: 140, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around', gap: 6, paddingBottom: 4 }}>
                             {dailyCounts.map((count, i) => (
-                                <div key={i} style={{
-                                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flex: 1
-                                }}>
-                                    <span style={{ fontSize: 12, fontWeight: 700, color: count > 0 ? 'var(--primary)' : 'var(--text-sub)' }}>
-                                        {count > 0 ? count : ''}
-                                    </span>
+                                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flex: 1 }}>
+                                    <span style={{ fontSize: 12, fontWeight: 700, color: count > 0 ? 'var(--primary)' : 'var(--text-sub)' }}>{count > 0 ? count : ''}</span>
                                     <div style={{
                                         width: '100%', maxWidth: 32,
                                         height: count > 0 ? `${(count / maxCount) * 100}px` : 4,
-                                        borderRadius: '8px 8px 0 0',
-                                        background: count > 0 ? 'var(--primary)' : 'var(--border)',
+                                        borderRadius: 10,
+                                        background: count > 0 ? 'linear-gradient(180deg, var(--primary-light), var(--primary))' : 'rgba(0,0,0,0.06)',
                                         animation: `barGrow 0.5s ease ${i * 0.05}s both`,
-                                        transition: 'height 0.4s ease'
+                                        boxShadow: count > 0 ? '0 2px 8px rgba(255,107,107,0.2)' : 'none'
                                     }} />
                                 </div>
                             ))}
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 8 }}>
-                            {barLabels.map((label, i) => (
-                                <span key={i} style={{ fontSize: 12, color: 'var(--text-sub)', fontWeight: 600, flex: 1, textAlign: 'center' }}>
-                                    {label}
-                                </span>
-                            ))}
+                            {barLabels.map((l, i) => <span key={i} style={{ fontSize: 12, color: 'var(--text-sub)', fontWeight: 600, flex: 1, textAlign: 'center' }}>{l}</span>)}
                         </div>
                     </div>
 
-                    {/* 증상 랭킹 */}
                     {symptomRanking.length > 0 && (
-                        <div style={{
-                            background: '#fff', borderRadius: 22, padding: '20px', marginBottom: 16,
-                            boxShadow: '0 2px 12px rgba(0,0,0,0.03)'
-                        }}>
-                            <h3 style={{ fontSize: 15, fontWeight: 800, marginBottom: 14, color: 'var(--text)' }}>많이 나타나는 증상</h3>
+                        <div className="glass-card" style={{ padding: 20, marginBottom: 16 }}>
+                            <h3 style={{ fontSize: 15, fontWeight: 800, marginBottom: 14 }}>많이 나타나는 증상</h3>
                             {symptomRanking.map(([key, count], i) => (
-                                <div key={key} style={{ marginBottom: 10 }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                                <div key={key} style={{ marginBottom: 12 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                                         <span style={{ fontSize: 14, fontWeight: 600 }}>{i + 1}. {getSymptomLabel(key)}</span>
                                         <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)' }}>{count}회</span>
                                     </div>
-                                    <div style={{ height: 8, borderRadius: 4, background: 'var(--bg-sub)', overflow: 'hidden' }}>
-                                        <div style={{
-                                            height: '100%', borderRadius: 4,
-                                            background: 'var(--primary-light)',
-                                            width: `${(count / maxSymptomCount) * 100}%`,
-                                            transition: 'width 0.5s ease'
-                                        }} />
+                                    <div style={{ height: 8, borderRadius: 4, background: 'rgba(0,0,0,0.04)', overflow: 'hidden' }}>
+                                        <div style={{ height: '100%', borderRadius: 4, background: 'linear-gradient(90deg, var(--primary-light), var(--primary))', width: `${(count/maxSymptomCount)*100}%`, transition: 'width 0.5s ease' }} />
                                     </div>
                                 </div>
                             ))}
                         </div>
                     )}
 
-                    {/* 활동 랭킹 */}
                     {activityRanking.length > 0 && (
-                        <div style={{
-                            background: '#fff', borderRadius: 22, padding: '20px', marginBottom: 24,
-                            boxShadow: '0 2px 12px rgba(0,0,0,0.03)'
-                        }}>
-                            <h3 style={{ fontSize: 15, fontWeight: 800, marginBottom: 14, color: 'var(--text)' }}>많이 나타나는 상황</h3>
+                        <div className="glass-card" style={{ padding: 20, marginBottom: 24 }}>
+                            <h3 style={{ fontSize: 15, fontWeight: 800, marginBottom: 14 }}>많이 나타나는 상황</h3>
                             {activityRanking.map(([key, count], i) => (
-                                <div key={key} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                                <div key={key} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
                                     <span style={{ fontSize: 14, fontWeight: 600 }}>{i + 1}. {getActivityLabel(key)}</span>
                                     <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)' }}>{count}회</span>
                                 </div>
@@ -1027,7 +950,6 @@
                         </div>
                     )}
 
-                    {/* 기록이 없을 때 */}
                     {filtered.length === 0 && (
                         <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-sub)' }}>
                             <p style={{ fontSize: 40, marginBottom: 8 }}>📊</p>
@@ -1035,15 +957,11 @@
                         </div>
                     )}
 
-                    {/* 내보내기 버튼 */}
-                    <button onClick={handleExport} style={{
-                        width: '100%', padding: '16px', borderRadius: 18,
-                        background: copied ? 'var(--success)' : '#fff',
-                        border: `2px solid ${copied ? 'var(--success)' : 'var(--primary)'}`,
+                    <button onClick={handleExport} className="glass-card" style={{
+                        width: '100%', padding: '16px', textAlign: 'center',
+                        background: copied ? 'var(--success)' : 'var(--card)',
                         color: copied ? '#fff' : 'var(--primary)',
-                        fontSize: 16, fontWeight: 700,
-                        transition: 'all 0.3s ease',
-                        boxShadow: '0 2px 12px rgba(0,0,0,0.03)'
+                        fontSize: 16, fontWeight: 700, transition: 'all 0.3s ease'
                     }}>
                         {copied ? '✓ 복사했어요!' : '📄 병원 가져가기 (복사)'}
                     </button>
@@ -1052,60 +970,37 @@
         }
 
         // ═══════════════════════════════════════
-        // 설정 화면
+        // 설정
         // ═══════════════════════════════════════
         function SettingsScreen({ records }) {
             const [sheetUrl, setSheetUrlState] = useState(() => getSheetUrl());
             const [saved, setSaved] = useState(false);
             const [testResult, setTestResult] = useState('');
-            const [showBackupInfo, setShowBackupInfo] = useState(false);
+            const [showGuide, setShowGuide] = useState(false);
 
-            const handleSaveUrl = () => {
-                setSheetUrl(sheetUrl);
-                setSaved(true);
-                setTimeout(() => setSaved(false), 2000);
-            };
-
+            const handleSaveUrl = () => { setSheetUrl(sheetUrl); setSaved(true); setTimeout(() => setSaved(false), 2000); };
             const handleTest = async () => {
                 if (!sheetUrl) { setTestResult('URL을 먼저 입력해주세요'); return; }
                 setTestResult('테스트 중...');
                 try {
-                    await fetch(sheetUrl, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            action: 'test',
-                            timestamp: new Date().toISOString(),
-                            message: '연결 테스트'
-                        })
-                    });
+                    await fetch(sheetUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'test', timestamp: new Date().toISOString(), message: '연결 테스트' }) });
                     setTestResult('✅ 전송 완료! 구글 시트를 확인해보세요');
-                } catch (e) {
-                    setTestResult('❌ 전송 실패. URL을 확인해주세요');
-                }
+                } catch (e) { setTestResult('❌ 전송 실패. URL을 확인해주세요'); }
             };
 
-            // 백업 내보내기 (JSON)
             const handleExportBackup = () => {
                 const data = JSON.stringify({ version: 2, records, exportedAt: new Date().toISOString() }, null, 2);
                 const blob = new Blob([data], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `heartlog-backup-${new Date().toISOString().slice(0,10)}.json`;
-                a.click();
+                const a = document.createElement('a'); a.href = url; a.download = `heartlog-backup-${new Date().toISOString().slice(0,10)}.json`; a.click();
                 URL.revokeObjectURL(url);
             };
 
-            // 백업 불러오기
             const handleImportBackup = () => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = '.json';
+                const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
                 input.onchange = (e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
+                    const file = e.target.files[0]; if (!file) return;
                     const reader = new FileReader();
                     reader.onload = (ev) => {
                         try {
@@ -1114,9 +1009,7 @@
                                 localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, records: data.records }));
                                 alert(`${data.records.length}건의 기록을 불러왔어요! 새로고침합니다.`);
                                 location.reload();
-                            } else {
-                                alert('올바른 백업 파일이 아닙니다.');
-                            }
+                            } else alert('올바른 백업 파일이 아닙니다.');
                         } catch { alert('파일을 읽을 수 없습니다.'); }
                     };
                     reader.readAsText(file);
@@ -1125,104 +1018,46 @@
             };
 
             return (
-                <div style={{
-                    minHeight: '100vh', minHeight: '100dvh',
-                    maxWidth: 500, margin: '0 auto', padding: '24px 20px 100px',
-                    animation: 'fadeIn 0.4s ease'
-                }}>
-                    <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 24 }}>설정</h2>
+                <div style={{ minHeight: '100dvh', maxWidth: 500, margin: '0 auto', padding: '24px 20px 100px', animation: 'fadeIn 0.4s ease', position: 'relative', zIndex: 1 }}>
+                    <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 24 }}>설정</h2>
 
-                    {/* 클라우드 동기화 */}
-                    <div style={{
-                        background: '#fff', borderRadius: 22, padding: '20px', marginBottom: 16,
-                        boxShadow: '0 2px 12px rgba(0,0,0,0.03)'
-                    }}>
+                    <div className="glass-card" style={{ padding: 20, marginBottom: 16 }}>
                         <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 6 }}>☁️ 구글 시트 동기화</h3>
-                        <p style={{ fontSize: 13, color: 'var(--text-sub)', marginBottom: 16, lineHeight: 1.6 }}>
-                            기록이 자동으로 구글 스프레드시트에 저장돼요.<br/>
-                            부모님이 아래 설정을 도와주세요.
-                        </p>
-
-                        <input
-                            type="url"
-                            value={sheetUrl}
-                            onChange={e => setSheetUrlState(e.target.value)}
-                            placeholder="Apps Script URL을 붙여넣기"
-                            style={{
-                                width: '100%', padding: '14px', borderRadius: 14,
-                                border: '2px solid var(--border)', fontSize: 14,
-                                fontFamily: 'inherit', marginBottom: 10,
-                                background: '#fff', color: 'var(--text)'
-                            }}
-                        />
-
+                        <p style={{ fontSize: 13, color: 'var(--text-sub)', marginBottom: 16, lineHeight: 1.6 }}>기록이 자동으로 구글 스프레드시트에 저장돼요.<br/>부모님이 아래 설정을 도와주세요.</p>
+                        <input type="url" value={sheetUrl} onChange={e => setSheetUrlState(e.target.value)} placeholder="Apps Script URL을 붙여넣기"
+                            style={{ width: '100%', padding: '14px 16px', borderRadius: 16, border: '2px solid rgba(0,0,0,0.06)', fontSize: 14, fontFamily: 'inherit', marginBottom: 10, background: 'rgba(255,255,255,0.9)', color: 'var(--text)' }} />
                         <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-                            <button onClick={handleSaveUrl} style={{
-                                flex: 1, padding: '12px', borderRadius: 14,
-                                background: saved ? 'var(--success)' : 'var(--primary)',
-                                color: '#fff', fontSize: 14, fontWeight: 700
-                            }}>{saved ? '✓ 저장됨' : '저장'}</button>
-                            <button onClick={handleTest} style={{
-                                flex: 1, padding: '12px', borderRadius: 14,
-                                background: 'var(--bg-sub)', color: 'var(--primary)',
-                                fontSize: 14, fontWeight: 700
-                            }}>테스트</button>
+                            <button onClick={handleSaveUrl} style={{ flex: 1, padding: '13px', borderRadius: 16, background: saved ? 'var(--success)' : 'var(--primary)', color: '#fff', fontSize: 14, fontWeight: 700, boxShadow: '0 4px 16px rgba(255,107,107,0.2)' }}>{saved ? '✓ 저장됨' : '저장'}</button>
+                            <button onClick={handleTest} style={{ flex: 1, padding: '13px', borderRadius: 16, background: 'rgba(0,0,0,0.04)', color: 'var(--primary)', fontSize: 14, fontWeight: 700 }}>테스트</button>
                         </div>
-
-                        {testResult && (
-                            <p style={{ fontSize: 13, color: testResult.includes('✅') ? 'var(--success)' : testResult.includes('❌') ? '#e74c3c' : 'var(--text-sub)', fontWeight: 600 }}>
-                                {testResult}
-                            </p>
-                        )}
+                        {testResult && <p style={{ fontSize: 13, color: testResult.includes('✅') ? 'var(--success)' : testResult.includes('❌') ? '#e74c3c' : 'var(--text-sub)', fontWeight: 600 }}>{testResult}</p>}
                     </div>
 
-                    {/* 설정 가이드 */}
-                    <div style={{
-                        background: '#fff', borderRadius: 22, padding: '20px', marginBottom: 16,
-                        boxShadow: '0 2px 12px rgba(0,0,0,0.03)'
-                    }}>
-                        <button onClick={() => setShowBackupInfo(!showBackupInfo)} style={{
-                            width: '100%', textAlign: 'left', display: 'flex',
-                            justifyContent: 'space-between', alignItems: 'center'
-                        }}>
+                    <div className="glass-card" style={{ padding: 20, marginBottom: 16 }}>
+                        <button onClick={() => setShowGuide(!showGuide)} style={{ width: '100%', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h3 style={{ fontSize: 16, fontWeight: 800 }}>📖 구글 시트 설정 방법</h3>
-                            <span style={{ fontSize: 18 }}>{showBackupInfo ? '▲' : '▼'}</span>
+                            <span style={{ fontSize: 16, color: 'var(--text-sub)' }}>{showGuide ? '▲' : '▼'}</span>
                         </button>
-                        {showBackupInfo && (
+                        {showGuide && (
                             <div style={{ marginTop: 14, fontSize: 14, lineHeight: 1.8, color: 'var(--text)' }}>
                                 <p><strong>1.</strong> 구글 드라이브에서 새 스프레드시트 만들기</p>
                                 <p><strong>2.</strong> 메뉴 → 확장 프로그램 → Apps Script</p>
                                 <p><strong>3.</strong> 코드 전체 지우고 아래 코드 붙여넣기:</p>
-                                <div style={{
-                                    background: 'var(--bg-sub)', borderRadius: 12, padding: 14,
-                                    margin: '8px 0', fontSize: 12, fontFamily: 'monospace',
-                                    overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all'
-                                }}>
+                                <div style={{ background: 'var(--bg-sub)', borderRadius: 14, padding: 14, margin: '8px 0', fontSize: 11, fontFamily: 'monospace', overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
 {`function doPost(e) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   var data = JSON.parse(e.postData.contents);
-
   if (data.action === 'test') {
     sheet.appendRow(['테스트', new Date(), '연결 성공!']);
     return ContentService.createTextOutput('ok');
   }
-
   if (data.action === 'add') {
-    sheet.appendRow([
-      data.date,
-      data.time,
-      data.symptoms,
-      data.severity,
-      data.activity,
-      data.duration,
-      data.memo,
-      data.timestamp
-    ]);
+    sheet.appendRow([data.date, data.time, data.symptoms,
+      data.severity, data.activity, data.duration,
+      data.memo, data.timestamp]);
   }
-
   return ContentService.createTextOutput('ok');
 }
-
 function doGet(e) {
   return ContentService.createTextOutput('Heart Log API');
 }`}
@@ -1230,43 +1065,21 @@ function doGet(e) {
                                 <p><strong>4.</strong> 배포 → 새 배포 → 유형: 웹 앱</p>
                                 <p><strong>5.</strong> 액세스 권한: "모든 사용자" 선택</p>
                                 <p><strong>6.</strong> 배포 → URL 복사 → 위 입력칸에 붙여넣기</p>
-                                <p style={{ marginTop: 8, color: 'var(--primary)', fontWeight: 700 }}>
-                                    💡 첫 행에 헤더를 추가하면 더 보기 좋아요:<br/>
-                                    날짜 | 시간 | 증상 | 강도 | 활동 | 지속시간 | 메모 | 타임스탬프
-                                </p>
                             </div>
                         )}
                     </div>
 
-                    {/* 백업/복원 */}
-                    <div style={{
-                        background: '#fff', borderRadius: 22, padding: '20px', marginBottom: 16,
-                        boxShadow: '0 2px 12px rgba(0,0,0,0.03)'
-                    }}>
+                    <div className="glass-card" style={{ padding: 20, marginBottom: 16 }}>
                         <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 14 }}>💾 백업 / 복원</h3>
-                        <p style={{ fontSize: 13, color: 'var(--text-sub)', marginBottom: 14, lineHeight: 1.5 }}>
-                            기록을 파일로 내보내거나, 파일에서 불러올 수 있어요.
-                        </p>
+                        <p style={{ fontSize: 13, color: 'var(--text-sub)', marginBottom: 14, lineHeight: 1.5 }}>기록을 파일로 내보내거나, 파일에서 불러올 수 있어요.</p>
                         <div style={{ display: 'flex', gap: 8 }}>
-                            <button onClick={handleExportBackup} style={{
-                                flex: 1, padding: '14px', borderRadius: 14,
-                                background: 'var(--bg-sub)', color: 'var(--primary)',
-                                fontSize: 14, fontWeight: 700
-                            }}>📤 내보내기</button>
-                            <button onClick={handleImportBackup} style={{
-                                flex: 1, padding: '14px', borderRadius: 14,
-                                background: 'var(--bg-sub)', color: 'var(--primary)',
-                                fontSize: 14, fontWeight: 700
-                            }}>📥 불러오기</button>
+                            <button onClick={handleExportBackup} style={{ flex: 1, padding: '14px', borderRadius: 16, background: 'rgba(0,0,0,0.04)', color: 'var(--primary)', fontSize: 14, fontWeight: 700 }}>📤 내보내기</button>
+                            <button onClick={handleImportBackup} style={{ flex: 1, padding: '14px', borderRadius: 16, background: 'rgba(0,0,0,0.04)', color: 'var(--primary)', fontSize: 14, fontWeight: 700 }}>📥 불러오기</button>
                         </div>
                     </div>
 
-                    {/* 앱 정보 */}
-                    <div style={{
-                        background: '#fff', borderRadius: 22, padding: '20px',
-                        boxShadow: '0 2px 12px rgba(0,0,0,0.03)', textAlign: 'center'
-                    }}>
-                        <p style={{ fontSize: 14, color: 'var(--text-sub)' }}>Heart Log v1.0</p>
+                    <div className="glass-card" style={{ padding: 20, textAlign: 'center' }}>
+                        <p style={{ fontSize: 14, color: 'var(--text-sub)' }}>Heart Log v2.0</p>
                         <p style={{ fontSize: 13, color: 'var(--text-sub)', marginTop: 4 }}>총 기록: {records.length}건</p>
                     </div>
                 </div>
@@ -1274,54 +1087,36 @@ function doGet(e) {
         }
 
         // ═══════════════════════════════════════
-        // App (루트)
+        // App
         // ═══════════════════════════════════════
         function App() {
             const [activeTab, setActiveTab] = useState('home');
             const [isRecording, setIsRecording] = useState(false);
             const [records, setRecords] = useState(() => loadRecords());
             const [toast, setToast] = useState({ show: false, message: '' });
-
-            // 타이머 상태
             const [timerRunning, setTimerRunning] = useState(false);
             const [timerStart, setTimerStart] = useState(null);
             const [timerElapsed, setTimerElapsed] = useState(0);
             const timerRef = useRef(null);
 
-            // 타이머 인터벌
             useEffect(() => {
                 if (timerRunning && timerStart) {
-                    timerRef.current = setInterval(() => {
-                        setTimerElapsed(Date.now() - timerStart);
-                    }, 200);
+                    timerRef.current = setInterval(() => setTimerElapsed(Date.now() - timerStart), 200);
                     return () => clearInterval(timerRef.current);
                 }
             }, [timerRunning, timerStart]);
 
-            // records가 변경될 때 저장
             useEffect(() => { saveRecords(records); }, [records]);
 
             const todayCount = records.filter(r => isSameDay(r.timestamp, new Date())).length;
 
-            const handleAlarm = () => setIsRecording(true);
-
             const handleSave = async (newRecord) => {
                 setRecords(prev => [newRecord, ...prev]);
                 setIsRecording(false);
-
-                // 타이머 리셋
-                if (timerRunning) {
-                    setTimerRunning(false);
-                    clearInterval(timerRef.current);
-                }
-                setTimerElapsed(0);
-                setTimerStart(null);
-
-                // 클라우드 동기화
+                if (timerRunning) { setTimerRunning(false); clearInterval(timerRef.current); }
+                setTimerElapsed(0); setTimerStart(null);
                 const syncResult = await syncToSheet(newRecord);
-                const syncMsg = syncResult.ok ? '저장했어요! 💓 (☁️ 동기화 완료)' : '저장했어요! 💓';
-
-                setToast({ show: true, message: syncMsg });
+                setToast({ show: true, message: syncResult.ok ? '저장했어요! 💓 (☁️ 동기화 완료)' : '저장했어요! 💓' });
                 setTimeout(() => setToast({ show: false, message: '' }), 2500);
             };
 
@@ -1332,49 +1127,14 @@ function doGet(e) {
                 setTimeout(() => setToast({ show: false, message: '' }), 2000);
             };
 
-            const handleTimerStart = () => {
-                setTimerStart(Date.now());
-                setTimerRunning(true);
-                setTimerElapsed(0);
-            };
-
-            const handleTimerStop = () => {
-                setTimerRunning(false);
-                clearInterval(timerRef.current);
-                // timerElapsed는 유지 (기록할 때 사용)
-            };
-
             return (
                 <div>
                     <Toast message={toast.message} show={toast.show} />
-
-                    {activeTab === 'home' && (
-                        <MainScreen
-                            todayCount={todayCount}
-                            onAlarm={handleAlarm}
-                            timerRunning={timerRunning}
-                            timerElapsed={timerElapsed}
-                            onTimerStart={handleTimerStart}
-                            onTimerStop={handleTimerStop}
-                        />
-                    )}
-                    {activeTab === 'history' && (
-                        <RecordScreen records={records} onDeleteRecord={handleDelete} />
-                    )}
-                    {activeTab === 'stats' && (
-                        <StatsScreen records={records} />
-                    )}
-                    {activeTab === 'settings' && (
-                        <SettingsScreen records={records} />
-                    )}
-
-                    <SymptomRecordPanel
-                        isOpen={isRecording}
-                        onClose={() => setIsRecording(false)}
-                        onSave={handleSave}
-                        timerElapsed={timerElapsed > 0 ? timerElapsed : null}
-                    />
-
+                    {activeTab === 'home' && <MainScreen todayCount={todayCount} onAlarm={() => setIsRecording(true)} timerRunning={timerRunning} timerElapsed={timerElapsed} onTimerStart={() => { setTimerStart(Date.now()); setTimerRunning(true); setTimerElapsed(0); }} onTimerStop={() => { setTimerRunning(false); clearInterval(timerRef.current); }} />}
+                    {activeTab === 'history' && <RecordScreen records={records} onDeleteRecord={handleDelete} />}
+                    {activeTab === 'stats' && <StatsScreen records={records} />}
+                    {activeTab === 'settings' && <SettingsScreen records={records} />}
+                    <SymptomRecordPanel isOpen={isRecording} onClose={() => setIsRecording(false)} onSave={handleSave} timerElapsed={timerElapsed > 0 ? timerElapsed : null} />
                     <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
                 </div>
             );
