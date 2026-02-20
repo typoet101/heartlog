@@ -770,13 +770,21 @@
                             {recs.map(r => {
                                 const sevInfo = getSeverityInfo(r.severity);
                                 return (
-                                    <button key={r.id} onClick={() => setSelectedRecord(r)} className="glass-card" style={{
+                                    <div key={r.id} onClick={() => setSelectedRecord(r)} className="glass-card" style={{
                                         width: '100%', textAlign: 'left', padding: '16px 18px', marginBottom: 10,
-                                        display: 'block', transition: 'transform 0.15s'
+                                        display: 'block', transition: 'transform 0.15s', cursor: 'pointer'
                                     }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                                            <span style={{ fontSize: 13, color: 'var(--text-sub)', fontWeight: 700 }}>{formatTime(r.timestamp)}</span>
-                                            {r.durationSeconds && <span style={{ fontSize: 12, color: 'var(--text-sub)' }}>⏱ {formatDuration(r.durationSeconds)}</span>}
+                                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
+                                            <div style={{ flex: 1, display: 'flex', gap: 8, alignItems: 'center' }}>
+                                                <span style={{ fontSize: 13, color: 'var(--text-sub)', fontWeight: 700 }}>{formatTime(r.timestamp)}</span>
+                                                {r.durationSeconds && <span style={{ fontSize: 12, color: 'var(--text-sub)' }}>⏱ {formatDuration(r.durationSeconds)}</span>}
+                                            </div>
+                                            <button onClick={(e) => { e.stopPropagation(); handleDelete(r.id); }} style={{
+                                                width: 28, height: 28, borderRadius: 10,
+                                                background: 'rgba(255,107,107,0.08)', color: 'var(--text-sub)',
+                                                fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                flexShrink: 0, border: 'none', cursor: 'pointer'
+                                            }}>✕</button>
                                         </div>
                                         <p style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{r.symptoms.map(getSymptomLabel).join(', ')}</p>
                                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -784,7 +792,7 @@
                                             <span style={{ padding: '4px 12px', borderRadius: 12, background: 'var(--bg-sub)', fontSize: 13, fontWeight: 600 }}>{getActivityLabel(r.activity)}</span>
                                         </div>
                                         {r.memo && <p style={{ marginTop: 8, fontSize: 13, color: 'var(--text-sub)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>💬 {r.memo}</p>}
-                                    </button>
+                                    </div>
                                 );
                             })}
                         </div>
