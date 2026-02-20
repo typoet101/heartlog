@@ -543,12 +543,11 @@
             const toggleSymptom = (key) => { setError(''); setSymptoms(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]); };
 
             const handleSave = () => {
-                if (symptoms.length === 0) { setError('증상을 선택해주세요'); return; }
                 setSaving(true); vibrate();
                 setTimeout(() => {
                     onSave({
                         id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2),
-                        timestamp, symptoms, severity: severity || 1, activity: activity || 'rest',
+                        timestamp, symptoms: ['palpitation'], severity: 1, activity: activity || 'rest',
                         durationSeconds: timerElapsed ? Math.floor(timerElapsed / 1000) : null, memo
                     });
                 }, 500);
@@ -588,43 +587,7 @@
                             </span>
                         </div>
 
-                        {/* 1. 증상 */}
-                        <section style={{ marginBottom: 32 }}>
-                            <h3 style={{ fontSize: 17, fontWeight: 800, marginBottom: 14 }}>
-                                어떤 증상이야? <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-sub)' }}>(여러 개 가능)</span>
-                            </h3>
-                            {error && <p style={{ color: '#FF6B6B', fontSize: 14, fontWeight: 600, marginBottom: 10 }}>{error}</p>}
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                                {SYMPTOMS.map(s => (
-                                    <button key={s.key} onClick={() => toggleSymptom(s.key)} style={chipStyle(symptoms.includes(s.key))}>
-                                        <span>{s.icon}</span> {s.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </section>
-
-                        {/* 2. 강도 */}
-                        <section style={{ marginBottom: 32 }}>
-                            <h3 style={{ fontSize: 17, fontWeight: 800, marginBottom: 14 }}>얼마나 힘들어?</h3>
-                            <div style={{ display: 'flex', gap: 10 }}>
-                                {SEVERITIES.map(s => (
-                                    <button key={s.value} onClick={() => setSeverity(s.value)} style={{
-                                        flex: 1, padding: '16px 4px', borderRadius: 20,
-                                        border: `2px solid ${severity === s.value ? s.color : 'rgba(0,0,0,0.05)'}`,
-                                        background: severity === s.value ? `${s.color}18` : 'rgba(255,255,255,0.9)',
-                                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                                        transform: severity === s.value ? 'scale(1.05)' : 'scale(1)',
-                                        transition: 'all 0.2s ease',
-                                        boxShadow: severity === s.value ? `0 4px 16px ${s.color}30` : 'var(--shadow-sm)'
-                                    }}>
-                                        <span style={{ fontSize: 30 }}>{s.emoji}</span>
-                                        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-sub)' }}>{s.label}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        </section>
-
-                        {/* 3. 활동 */}
+                        {/* 1. 활동 */}
                         <section style={{ marginBottom: 32 }}>
                             <h3 style={{ fontSize: 17, fontWeight: 800, marginBottom: 14 }}>뭐하고 있었어?</h3>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
