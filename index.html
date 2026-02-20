@@ -528,27 +528,38 @@
         // 증상 기록 패널
         // ═══════════════════════════════════════
         function SymptomRecordPanel({ isOpen, onClose, onSave, timerElapsed }) {
-            const [symptoms, setSymptoms] = useState([]);
-            const [severity, setSeverity] = useState(null);
             const [activity, setActivity] = useState(null);
             const [memo, setMemo] = useState('');
             const [timestamp] = useState(() => new Date().toISOString());
             const [saving, setSaving] = useState(false);
-            const [error, setError] = useState('');
+            const isManual = !timerElapsed;
+            const [manualDate, setManualDate] = useState('');
+            const [manualTime, setManualTime] = useState('');
+            const [manualDurationMin, setManualDurationMin] = useState('');
 
             useEffect(() => {
-                if (isOpen) { setSymptoms([]); setSeverity(null); setActivity(null); setMemo(''); setSaving(false); setError(''); }
+                if (isOpen) {
+                    setActivity(null); setMemo(''); setSaving(false);
+                    const now = new Date();
+                    setManualDate(now.toISOString().slice(0, 10));
+                    setManualTime(`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`);
+                    setManualDurationMin('');
+                }
             }, [isOpen]);
-
-            const toggleSymptom = (key) => { setError(''); setSymptoms(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]); };
 
             const handleSave = () => {
                 setSaving(true); vibrate();
+                const finalTimestamp = isManual
+                    ? new Date(`${manualDate}T${manualTime}:00`).toISOString()
+                    : timestamp;
+                const finalDuration = isManual
+                    ? (manualDurationMin ? parseInt(manualDurationMin) * 60 : null)
+                    : (timerElapsed ? Math.floor(timerElapsed / 1000) : null);
                 setTimeout(() => {
                     onSave({
                         id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2),
-                        timestamp, symptoms: ['palpitation'], severity: 1, activity: activity || 'rest',
-                        durationSeconds: timerElapsed ? Math.floor(timerElapsed / 1000) : null, memo
+                        timestamp: finalTimestamp, symptoms: ['palpitation'], severity: 1,
+                        activity: activity || 'rest', durationSeconds: finalDuration, memo
                     });
                 }, 500);
             };
@@ -567,6 +578,13 @@
                 animation: selected ? 'chipPop 0.25s ease' : 'none'
             });
 
+            const inputStyle = {
+                width: '100%', padding: '14px 16px', borderRadius: 16,
+                border: '2px solid rgba(0,0,0,0.05)', fontSize: 15,
+                fontFamily: 'inherit', background: 'rgba(255,255,255,0.9)',
+                color: 'var(--text)', boxShadow: 'var(--shadow-sm)'
+            };
+
             return (
                 <div style={{
                     position: 'fixed', inset: 0, zIndex: 100,
@@ -583,11 +601,36 @@
                                 alignItems: 'center', justifyContent: 'center', fontSize: 18
                             }}>✕</button>
                             <span style={{ fontSize: 14, color: 'var(--text-sub)', fontWeight: 600 }}>
-                                기록 중 · {formatTime(timestamp)}
+                                {isManual ? '기록 추가' : `기록 중 · ${formatTime(timestamp)}`}
                             </span>
                         </div>
 
-                        {/* 1. 활동 */}
+                        {/* 수동 모드: 날짜/시간/지속시간 입력 */}
+                        {isManual && (
+                            <section style={{ marginBottom: 32 }}>
+                                <h3 style={{ fontSize: 17, fontWeight: 800, marginBottom: 14 }}>언제 있었어?</h3>
+                                <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+                                    <div style={{ flex: 1 }}>
+                                        <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-sub)', marginBottom: 6, display: 'block' }}>날짜</label>
+                                        <input type="date" value={manualDate} onChange={e => setManualDate(e.target.value)} style={inputStyle} />
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-sub)', marginBottom: 6, display: 'block' }}>시간</label>
+                                        <input type="time" value={manualTime} onChange={e => setManualTime(e.target.value)} style={inputStyle} />
+                                    </div>
+                                </div>
+                                <h3 style={{ fontSize: 17, fontWeight: 800, marginBottom: 14 }}>
+                                    얼마나 지속됐어? <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-sub)' }}>(선택)</span>
+                                </h3>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    <input type="number" min="0" placeholder="0" value={manualDurationMin} onChange={e => setManualDurationMin(e.target.value)}
+                                        style={{ ...inputStyle, width: 100 }} />
+                                    <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-sub)' }}>분</span>
+                                </div>
+                            </section>
+                        )}
+
+                        {/* 활동 */}
                         <section style={{ marginBottom: 32 }}>
                             <h3 style={{ fontSize: 17, fontWeight: 800, marginBottom: 14 }}>뭐하고 있었어?</h3>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
