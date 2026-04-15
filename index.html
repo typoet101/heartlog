@@ -19,6 +19,7 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
         :root {
             --bg: #FFF5F2;
@@ -197,9 +198,17 @@
         const STORAGE_KEY = 'heartlog_records';
 
         // ═══════════════════════════════════════
+        // Supabase
+        // ═══════════════════════════════════════
+        const SUPABASE_URL = 'https://przhswxicchuozkuitmz.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByemhzd3hpY2NodW96a3VpdG16Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMTU5NzMsImV4cCI6MjA5MTc5MTk3M30.0pHJojAq-ktx_PvpNsQgSkpqKOstpNbIgr6MAPwYxI0';
+        const _supabaseReady = SUPABASE_URL.startsWith('https://') && SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY';
+        const sb = _supabaseReady ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+        // ═══════════════════════════════════════
         // 데이터 레이어
         // ═══════════════════════════════════════
-        function loadRecords() {
+        function loadRecordsLocal() {
             try {
                 const raw = localStorage.getItem(STORAGE_KEY);
                 if (!raw) return [];
@@ -207,8 +216,51 @@
             } catch { return []; }
         }
 
-        function saveRecords(records) {
+        function saveRecordsLocal(records) {
             localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, records }));
+        }
+
+        function recordToRow(record, userId) {
+            return {
+                id: record.id, user_id: userId, timestamp: record.timestamp,
+                symptoms: record.symptoms, severity: record.severity,
+                activity: record.activity, duration_seconds: record.durationSeconds,
+                memo: record.memo || ''
+            };
+        }
+
+        function rowToRecord(row) {
+            return {
+                id: row.id, timestamp: row.timestamp, symptoms: row.symptoms,
+                severity: row.severity, activity: row.activity,
+                durationSeconds: row.duration_seconds, memo: row.memo || ''
+            };
+        }
+
+        async function fetchRecordsFromSupabase() {
+            if (!sb) return [];
+            const { data, error } = await sb.from('records').select('*').order('timestamp', { ascending: false });
+            if (error) { console.warn('Supabase fetch error:', error); return []; }
+            return (data || []).map(rowToRecord);
+        }
+
+        async function upsertRecordToSupabase(userId, record) {
+            if (!sb) return;
+            const { error } = await sb.from('records').upsert(recordToRow(record, userId));
+            if (error) console.warn('Supabase upsert error:', error);
+        }
+
+        async function deleteRecordFromSupabase(recordId) {
+            if (!sb) return;
+            const { error } = await sb.from('records').delete().eq('id', recordId);
+            if (error) console.warn('Supabase delete error:', error);
+        }
+
+        async function syncAllToSupabase(userId, localRecords) {
+            if (!sb || localRecords.length === 0) return;
+            const rows = localRecords.map(r => recordToRow(r, userId));
+            const { error } = await sb.from('records').upsert(rows);
+            if (error) console.warn('Supabase bulk sync error:', error);
         }
 
         // ═══════════════════════════════════════
@@ -987,7 +1039,7 @@
         // ═══════════════════════════════════════
         // 설정
         // ═══════════════════════════════════════
-        function SettingsScreen({ records }) {
+        function SettingsScreen({ records, session, onSignOut }) {
             const [sheetUrl, setSheetUrlState] = useState(() => getSheetUrl());
             const [saved, setSaved] = useState(false);
             const [testResult, setTestResult] = useState('');
@@ -1093,9 +1145,96 @@ function doGet(e) {
                         </div>
                     </div>
 
+                    {session && (
+                        <div className="glass-card" style={{ padding: 20, marginBottom: 16 }}>
+                            <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 10 }}>👤 계정</h3>
+                            <p style={{ fontSize: 14, color: 'var(--text-sub)', marginBottom: 14 }}>{session.user.email}</p>
+                            <button onClick={onSignOut}
+                                style={{ width: '100%', padding: '14px', borderRadius: 16, background: 'rgba(0,0,0,0.04)', color: '#e74c3c', fontSize: 14, fontWeight: 700 }}>
+                                로그아웃
+                            </button>
+                        </div>
+                    )}
+
                     <div className="glass-card" style={{ padding: 20, textAlign: 'center' }}>
-                        <p style={{ fontSize: 14, color: 'var(--text-sub)' }}>Heart Log v2.0</p>
+                        <p style={{ fontSize: 14, color: 'var(--text-sub)' }}>Heart Log v3.0</p>
                         <p style={{ fontSize: 13, color: 'var(--text-sub)', marginTop: 4 }}>총 기록: {records.length}건</p>
+                    </div>
+                </div>
+            );
+        }
+
+        // ═══════════════════════════════════════
+        // 로그인 화면
+        // ═══════════════════════════════════════
+        function AuthScreen({ onAuth }) {
+            const [isSignUp, setIsSignUp] = useState(false);
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+            const [loading, setLoading] = useState(false);
+
+            const handleSubmit = async () => {
+                setError(''); setLoading(true);
+                try {
+                    const { data, error: authError } = isSignUp
+                        ? await sb.auth.signUp({ email, password })
+                        : await sb.auth.signInWithPassword({ email, password });
+                    if (authError) {
+                        if (authError.message.includes('Invalid login')) setError('이메일 또는 비밀번호가 맞지 않아요');
+                        else if (authError.message.includes('already registered')) setError('이미 가입된 이메일이에요');
+                        else if (authError.message.includes('valid email')) setError('올바른 이메일을 입력해주세요');
+                        else if (authError.message.includes('at least')) setError('비밀번호는 6자 이상이어야 해요');
+                        else setError(authError.message);
+                    }
+                } catch (e) { setError('연결에 실패했어요. 인터넷을 확인해주세요'); }
+                setLoading(false);
+            };
+
+            const inputStyle = {
+                width: '100%', padding: '16px 18px', borderRadius: 16,
+                border: '2px solid rgba(0,0,0,0.06)', fontSize: 15,
+                fontFamily: 'inherit', background: 'rgba(255,255,255,0.9)',
+                color: 'var(--text)', outline: 'none'
+            };
+
+            return (
+                <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', position: 'relative', zIndex: 1 }}>
+                    <div style={{ textAlign: 'center', marginBottom: 40 }}>
+                        <div style={{ fontSize: 56, marginBottom: 12, animation: 'heartBeat 1.2s ease-in-out infinite' }}>💓</div>
+                        <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--text)', marginBottom: 6 }}>심장 기록</h1>
+                        <p style={{ fontSize: 15, color: 'var(--text-sub)' }}>Heart Log</p>
+                    </div>
+
+                    <div className="glass-card" style={{ padding: 28, width: '100%', maxWidth: 380 }}>
+                        <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 20, textAlign: 'center' }}>
+                            {isSignUp ? '가입하기' : '로그인'}
+                        </h2>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
+                            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                                placeholder="이메일" style={inputStyle}
+                                onKeyDown={e => e.key === 'Enter' && handleSubmit()} />
+                            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+                                placeholder="비밀번호 (6자 이상)" style={inputStyle}
+                                onKeyDown={e => e.key === 'Enter' && handleSubmit()} />
+                        </div>
+
+                        {error && <p style={{ fontSize: 13, color: '#e74c3c', fontWeight: 600, marginBottom: 12, textAlign: 'center' }}>{error}</p>}
+
+                        <button onClick={handleSubmit} disabled={loading}
+                            style={{ width: '100%', padding: '16px', borderRadius: 16, background: 'var(--primary)', color: '#fff',
+                                fontSize: 16, fontWeight: 700, boxShadow: 'var(--shadow-glow)', opacity: loading ? 0.7 : 1, marginBottom: 16 }}>
+                            {loading ? '잠시만요...' : isSignUp ? '가입하기' : '로그인'}
+                        </button>
+
+                        <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--text-sub)' }}>
+                            {isSignUp ? '이미 계정이 있나요? ' : '계정이 없나요? '}
+                            <span onClick={() => { setIsSignUp(!isSignUp); setError(''); }}
+                                style={{ color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}>
+                                {isSignUp ? '로그인' : '가입하기'}
+                            </span>
+                        </p>
                     </div>
                 </div>
             );
@@ -1105,14 +1244,60 @@ function doGet(e) {
         // App
         // ═══════════════════════════════════════
         function App() {
+            const [session, setSession] = useState(null);
+            const [authLoading, setAuthLoading] = useState(true);
             const [activeTab, setActiveTab] = useState('home');
             const [isRecording, setIsRecording] = useState(false);
-            const [records, setRecords] = useState(() => loadRecords());
+            const [records, setRecords] = useState(() => loadRecordsLocal());
             const [toast, setToast] = useState({ show: false, message: '' });
             const [timerRunning, setTimerRunning] = useState(false);
             const [timerStart, setTimerStart] = useState(null);
             const [timerElapsed, setTimerElapsed] = useState(0);
             const timerRef = useRef(null);
+
+            // 인증 상태 감지
+            useEffect(() => {
+                if (!sb) { setAuthLoading(false); return; }
+                sb.auth.getSession().then(({ data }) => {
+                    setSession(data.session);
+                    setAuthLoading(false);
+                });
+                const { data: { subscription } } = sb.auth.onAuthStateChange((_event, s) => setSession(s));
+                return () => subscription.unsubscribe();
+            }, []);
+
+            // 로그인 시 데이터 동기화
+            useEffect(() => {
+                if (!session) return;
+                const userId = session.user.id;
+                (async () => {
+                    try {
+                        const localRecs = loadRecordsLocal();
+                        const remoteRecs = await fetchRecordsFromSupabase();
+
+                        if (localRecs.length === 0 && remoteRecs.length > 0) {
+                            setRecords(remoteRecs);
+                            saveRecordsLocal(remoteRecs);
+                            return;
+                        }
+
+                        if (localRecs.length > 0) {
+                            const remoteIds = new Set(remoteRecs.map(r => r.id));
+                            const localOnly = localRecs.filter(r => !remoteIds.has(r.id));
+                            if (localOnly.length > 0) await syncAllToSupabase(userId, localOnly);
+                        }
+
+                        const allIds = new Set();
+                        const merged = [];
+                        for (const r of [...remoteRecs, ...localRecs]) {
+                            if (!allIds.has(r.id)) { allIds.add(r.id); merged.push(r); }
+                        }
+                        merged.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                        setRecords(merged);
+                        saveRecordsLocal(merged);
+                    } catch (e) { console.warn('Sync on login failed:', e); }
+                })();
+            }, [session]);
 
             useEffect(() => {
                 if (timerRunning && timerStart) {
@@ -1121,7 +1306,7 @@ function doGet(e) {
                 }
             }, [timerRunning, timerStart]);
 
-            useEffect(() => { saveRecords(records); }, [records]);
+            useEffect(() => { saveRecordsLocal(records); }, [records]);
 
             const todayCount = records.filter(r => isSameDay(r.timestamp, new Date())).length;
 
@@ -1130,6 +1315,10 @@ function doGet(e) {
                 setIsRecording(false);
                 if (timerRunning) { setTimerRunning(false); clearInterval(timerRef.current); }
                 setTimerElapsed(0); setTimerStart(null);
+
+                if (session) {
+                    upsertRecordToSupabase(session.user.id, newRecord).catch(() => {});
+                }
                 const syncResult = await syncToSheet(newRecord);
                 setToast({ show: true, message: syncResult.ok ? '저장했어요! 💓 (☁️ 동기화 완료)' : '저장했어요! 💓' });
                 setTimeout(() => setToast({ show: false, message: '' }), 2500);
@@ -1137,6 +1326,9 @@ function doGet(e) {
 
             const handleDelete = (id) => {
                 setRecords(prev => prev.filter(r => r.id !== id));
+                if (session) {
+                    deleteRecordFromSupabase(id).catch(() => {});
+                }
                 syncDeleteToSheet(id);
                 setToast({ show: true, message: '삭제했어요' });
                 setTimeout(() => setToast({ show: false, message: '' }), 2000);
@@ -1144,17 +1336,34 @@ function doGet(e) {
 
             const handleButtonPress = () => {
                 if (!timerRunning) {
-                    // 1탭: 타이머 시작
                     setTimerStart(Date.now());
                     setTimerRunning(true);
                     setTimerElapsed(0);
                 } else {
-                    // 2탭: 타이머 멈추고 기록 패널 열기
                     setTimerRunning(false);
                     clearInterval(timerRef.current);
                     setIsRecording(true);
                 }
             };
+
+            const handleSignOut = async () => {
+                await sb.auth.signOut();
+                setSession(null);
+                setActiveTab('home');
+            };
+
+            if (authLoading) {
+                return (
+                    <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: 48, animation: 'heartBeat 1.2s ease-in-out infinite' }}>💓</div>
+                            <p style={{ marginTop: 16, color: 'var(--text-sub)', fontSize: 15, fontWeight: 600 }}>로딩 중...</p>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (sb && !session) return <AuthScreen onAuth={setSession} />;
 
             return (
                 <div>
@@ -1162,7 +1371,7 @@ function doGet(e) {
                     {activeTab === 'home' && <MainScreen todayCount={todayCount} onButtonPress={handleButtonPress} timerRunning={timerRunning} timerElapsed={timerElapsed} />}
                     {activeTab === 'history' && <RecordScreen records={records} onDeleteRecord={handleDelete} onManualRecord={() => setIsRecording(true)} />}
                     {activeTab === 'stats' && <StatsScreen records={records} />}
-                    {activeTab === 'settings' && <SettingsScreen records={records} />}
+                    {activeTab === 'settings' && <SettingsScreen records={records} session={session} onSignOut={handleSignOut} />}
                     <SymptomRecordPanel isOpen={isRecording} onClose={() => setIsRecording(false)} onSave={handleSave} timerElapsed={timerElapsed > 0 ? timerElapsed : null} />
                     <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
                 </div>
@@ -1170,6 +1379,15 @@ function doGet(e) {
         }
 
         ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js').then(() => {
+                if (navigator.storage && navigator.storage.persist) {
+                    navigator.storage.persist();
+                }
+            });
+        }
     </script>
 </body>
 </html>
